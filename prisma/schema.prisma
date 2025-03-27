@@ -1,0 +1,88 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  watchlists Watchlist[]
+  portfolios Portfolio[]
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  symbols   Symbol[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Symbol {
+  id          String   @id @default(cuid())
+  symbol      String
+  name        String?
+  type        SymbolType
+  watchlists  Watchlist[]
+  portfolios  Portfolio[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Portfolio {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  symbols   Symbol[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SymbolType {
+  STOCK
+  CRYPTO
+  ETF
+  FOREX
+}
+
+model MarketData {
+  id        String   @id @default(cuid())
+  symbol    String
+  name      String
+  price     Float
+  change    Float
+  volume    String
+  market_cap Float
+  type      String
+  timestamp DateTime @default(now())
+}
+
+model apiLimit {
+  id           String   @id @default(cuid())
+  apiName      String   @unique
+  dailyLimit   Int
+  requestCount Int      @default(0)
+  lastReset    DateTime @default(now())
+}
+
+model Article {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
