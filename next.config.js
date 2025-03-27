@@ -7,10 +7,7 @@ const nextConfig = {
       'images.unsplash.com',
       'avatars.githubusercontent.com'
     ]
-  },
-  experimental: {
-    serverActions: true,
-  },
+  }
 }
 
 module.exports = nextConfig

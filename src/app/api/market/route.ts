@@ -37,7 +37,8 @@ export async function POST(request: Request) {
         price: data.price,
         change: data.change,
         volume: data.volume,
-        type: data.type
+        type: data.type,
+        market_cap: data.market_cap
       }
     })
     return NextResponse.json(result)
