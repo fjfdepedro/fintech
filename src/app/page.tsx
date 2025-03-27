@@ -11,7 +11,7 @@ import { useState, useEffect } from "react"
 import { cryptoAPI } from "@/lib/api/crypto-service"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from 'date-fns'
-import type { marketData } from '.prisma/client' // Asegúrate de que este import sea correcto
+import type { MarketData } from '.prisma/client'
 import axios from "axios"
 import { CryptoArticle } from "../components/crypto-article"
 
@@ -41,7 +41,7 @@ export default function Home() {
   const [historyLoading, setHistoryLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const [data, setData] = useState<marketData[]>([])
+  const [data, setData] = useState<MarketData[]>([])
 
   // Calcular valores dinámicos
   const globalMarketCap = cryptoData?.[0]?.market_cap || 0

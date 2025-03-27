@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { marketData } from '.prisma/client'
+import type { MarketData } from '.prisma/client'
 import axiosRetry from 'axios-retry'
 import { PrismaClient } from '@prisma/client'
 
@@ -13,7 +13,7 @@ axiosRetry(axios, {
 })
 
 export const cryptoAPI = {
-  async getTopCryptos(limit: number = 20): Promise<marketData[]> {
+  async getTopCryptos(limit: number = 20): Promise<MarketData[]> {
     try {
       const response = await axios.get(`${COINGECKO_API_URL}/coins/markets`, {
         params: {
@@ -82,7 +82,7 @@ export const cryptoAPI = {
     }
   },
 
-  async saveCryptoData(data: marketData) {
+  async saveCryptoData(data: MarketData) {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
       const response = await axios.post(`${baseUrl}/api/crypto`, data)
