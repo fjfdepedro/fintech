@@ -17,15 +17,23 @@ export async function GET(request: Request) {
 
     const historicalData = await prisma.marketData.findMany({
       where: {
-        symbol: symbol,
+        symbol: symbol.toUpperCase(),
         timestamp: {
           gte: startDate
         }
       },
       orderBy: {
         timestamp: 'asc'
+      },
+      select: {
+        price: true,
+        timestamp: true
       }
     })
+
+    if (!historicalData.length) {
+      return NextResponse.json([])
+    }
 
     // Transformar los datos al formato requerido por el gráfico
     const formattedData = historicalData.map(record => ({

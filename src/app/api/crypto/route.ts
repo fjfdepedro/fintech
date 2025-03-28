@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('Iniciando consulta a la base de datos...')
+    const { searchParams } = new URL(request.url)
+    const limit = parseInt(searchParams.get('limit') || '25')
+
     const cryptoData = await prisma.marketData.findMany({
       orderBy: { timestamp: 'desc' },
-      take: 20,
+      take: limit,
     })
-    console.log('Datos obtenidos de la base de datos:', cryptoData)
+
     return NextResponse.json(cryptoData)
   } catch (error) {
     console.error('Error fetching crypto data:', error)
@@ -40,7 +42,6 @@ export async function POST(request: Request) {
     })
 
     if (existingRecord) {
-      console.log(`Ya existe un registro para ${data.symbol} en esta hora`)
       return NextResponse.json({ 
         message: 'Ya existe un registro para esta criptomoneda en esta hora',
         existingRecord 
@@ -61,7 +62,6 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log(`Nuevo registro creado para ${data.symbol}`)
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error en la base de datos:', error)

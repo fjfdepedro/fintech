@@ -13,11 +13,23 @@ axiosRetry(axios, {
 })
 
 export const cryptoAPI = {
-  async getTopCryptos(limit: number = 20): Promise<MarketData[]> {
+  async getTopCryptos(limit: number = 25): Promise<MarketData[]> {
     try {
+      // Lista específica de criptomonedas que queremos seguir
+      const specificCoins = [
+        // Criptomonedas originales
+        'bitcoin', 'ethereum', 'solana', 'binancecoin', 'ripple',
+        'tether', 'cardano', 'dogecoin', 'sui', 'arbitrum',
+        'algorand', 'floki', 'toncoin',
+        'polkadot', 'polygon', 'avalanche-2', 'chainlink', 'uniswap',
+        'stellar', 'cosmos', 'optimism', 'near', 'aptos',
+        'injective-protocol', 'sei-network'
+      ]
+
       const response = await axios.get(`${COINGECKO_API_URL}/coins/markets`, {
         params: {
           vs_currency: 'usd',
+          ids: specificCoins.join(','),
           order: 'market_cap_desc',
           per_page: limit,
           page: 1,
@@ -44,7 +56,6 @@ export const cryptoAPI = {
 
   async getMarketChart(coinId: string, days: number = 7) {
     try {
-      console.log(`Iniciando llamada a la API de CoinGecko para obtener el gráfico de mercado de ${coinId}...`)
       const response = await axios.get(
         `${COINGECKO_API_URL}/coins/${coinId}/market_chart`,
         {
@@ -54,7 +65,7 @@ export const cryptoAPI = {
           }
         }
       )
-      console.log(`Datos del gráfico de mercado recibidos para ${coinId}:`, response.data)
+
       return response.data
     } catch (error) {
       console.error(`Error obteniendo el gráfico de mercado para ${coinId}:`, error)
@@ -86,10 +97,7 @@ export const cryptoAPI = {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
       const response = await axios.post(`${baseUrl}/api/crypto`, data)
-      console.log('Starting historical data fetch...')
-      console.log(`Getting historical data for ${data.symbol}...`)
-      console.log(`Data saved for ${data.symbol}`)
-      console.log('Historical data fetch completed.')
+
       return response.data
     } catch (error) {
       console.error('Error saving crypto data:', error)
@@ -108,6 +116,6 @@ export const cryptoAPI = {
   }
 }
 
-cryptoAPI.getTopCryptos(20)
-  .then(data => console.log('Datos obtenidos:', data))
+cryptoAPI.getTopCryptos(25)
+  .then(data => data)
   .catch(error => console.error('Error:', error))

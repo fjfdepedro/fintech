@@ -80,9 +80,9 @@ model apiLimit {
 model Article {
   id        String   @id @default(cuid())
   content   String   @db.Text
-  date      DateTime @default(now())
+  timestamp DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([date])
+  @@index([timestamp])
 }

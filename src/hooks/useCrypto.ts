@@ -16,25 +16,22 @@ export function useCryptoData() {
       try {
         setLoading(true)
         // 1. Primero obtener datos de la base de datos
-        const dbData = await axios.get('/api/crypto')
+        const dbData = await axios.get('/api/crypto?limit=25')
         setData(dbData.data)
         setLastUpdated(new Date(dbData.data[0]?.timestamp))
         setError(null)
 
-        // 2. Verificar si necesitamos actualizar desde CoinGecko (cada 3 horas)
+        // 2. Verificar si necesitamos actualizar desde CoinGecko (cada hora)
         const lastUpdate = await axios.get('/api/crypto/last-update')
         const now = new Date()
-        const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000)
-        
-        if (!lastUpdate.data.lastUpdate || new Date(lastUpdate.data.lastUpdate) < threeHoursAgo) {
+        const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+
+        if (!lastUpdate.data.lastUpdate || new Date(lastUpdate.data.lastUpdate) < oneHourAgo) {
           // 3. Si necesitamos actualizar, hacerlo en segundo plano
-          cryptoAPI.getTopCryptos(20)
-            .then(async (apiData) => {
-              await Promise.all(apiData.map(data => axios.post('/api/crypto', data)))
-              setData(apiData)
-              setLastUpdated(new Date())
-            })
-            .catch(err => console.error('Error actualizando datos:', err))
+          const apiData = await cryptoAPI.getTopCryptos(25)
+          await Promise.all(apiData.map(data => axios.post('/api/crypto', data)))
+          setData(apiData)
+          setLastUpdated(new Date())
         }
       } catch (err) {
         console.error('Error:', err)
@@ -45,8 +42,8 @@ export function useCryptoData() {
     }
 
     fetchData()
-    // Actualizar cada 3 horas
-    const interval = setInterval(fetchData, 3 * 60 * 60 * 1000)
+    // Actualizar cada hora
+    const interval = setInterval(fetchData, 60 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 

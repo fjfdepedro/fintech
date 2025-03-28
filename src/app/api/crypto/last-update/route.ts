@@ -7,10 +7,10 @@ export async function GET() {
       orderBy: { timestamp: 'desc' }
     })
     
-    // Si el último registro es más antiguo de 3 horas, permitir actualización
+    // Si el último registro es más antiguo de 1 hora, permitir actualización
     const now = new Date()
-    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000)
-    const needsUpdate = !lastRecord || lastRecord.timestamp < threeHoursAgo
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+    const needsUpdate = !lastRecord || lastRecord.timestamp < oneHourAgo
     
     return NextResponse.json({ 
       lastUpdate: lastRecord?.timestamp || null,

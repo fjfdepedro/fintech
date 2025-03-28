@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import axios from 'axios'
-
-const OPENROUTER_API_KEY = process.env.QWEN_API_KEY
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+import { newsAPI } from '@/lib/api/news-service'
+import { articleAPI } from '@/lib/api/article-service'
 
 async function getLatestCryptoData() {
   const cryptoData = await prisma.marketData.findMany({
@@ -18,48 +16,23 @@ async function getLatestCryptoData() {
   return cryptoData
 }
 
-async function generateArticle(cryptoData: any[]) {
-  const prompt = `Write a professional financial analysis article about the following cryptocurrencies. For each cryptocurrency, include its current price, 24h change, and market trends. Use professional financial language and focus on market analysis. Here's the data:
-
-${cryptoData.map(crypto => `
-${crypto.name} (${crypto.symbol}):
-- Current Price: $${crypto.price}
-- 24h Change: ${crypto.change}%
-- Volume: ${crypto.volume}
-- Last Updated: ${new Date(crypto.timestamp).toLocaleString()}
-`).join('\n')}
-
-Please write a paragraph for each cryptocurrency, analyzing its performance and market position.`
-
-  const response = await axios.post(OPENROUTER_URL, {
-    model: "qwen/qwq-32b:free",
-    messages: [
-      {
-        role: "user",
-        content: prompt
-      }
-    ]
-  }, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`
-    }
-  })
-
-  return response.data.choices[0].message.content
-}
-
 export async function GET() {
   try {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Obtener el inicio y fin de la hora actual
+    const now = new Date()
+    const startOfHour = new Date(now.setMinutes(0, 0, 0))
+    const endOfHour = new Date(now.setTime(now.getTime() + 60 * 60 * 1000 - 1))
 
-    // Check if we already have an article for today
+    // Buscar el artículo más reciente dentro de la hora actual
     const existingArticle = await prisma.article.findFirst({
       where: {
-        date: {
-          gte: today
+        createdAt: {
+          gte: startOfHour,
+          lte: endOfHour
         }
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     })
 
@@ -67,17 +40,19 @@ export async function GET() {
       return NextResponse.json(existingArticle)
     }
 
-    // Get latest crypto data
-    const cryptoData = await getLatestCryptoData()
+    // Obtener datos de criptomonedas y noticias en paralelo
+    const [cryptoData, newsArticles] = await Promise.all([
+      getLatestCryptoData(),
+      newsAPI.getCryptoNews()
+    ])
 
-    // Generate new article
-    const content = await generateArticle(cryptoData)
+    // Generar nuevo artículo
+    const content = await articleAPI.generateArticle(cryptoData, newsArticles)
 
-    // Save the article
+    // Guardar el artículo
     const article = await prisma.article.create({
       data: {
-        content,
-        date: today
+        content: content.html
       }
     })
 
@@ -89,4 +64,4 @@ export async function GET() {
       { status: 500 }
     )
   }
-} 
+}
