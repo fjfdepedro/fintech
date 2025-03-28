@@ -37,7 +37,10 @@ export async function GET() {
     })
 
     if (existingArticle) {
-      return NextResponse.json(existingArticle)
+      return NextResponse.json({
+        ...existingArticle,
+        timestamp: existingArticle.createdAt // Add timestamp for backwards compatibility
+      })
     }
 
     // Obtener datos de criptomonedas y noticias en paralelo
