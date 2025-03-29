@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import type { MarketData, ApiLimit } from '@/types/prisma'
 
+// Add ISR configuration
+export const revalidate = 3600 // Revalidate every hour
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type')
@@ -19,10 +22,19 @@ export async function GET(request: Request) {
       },
       orderBy: { timestamp: 'desc' }
     })
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+      }
+    })
   } catch (error) {
     console.error('Database error:', error)
-    return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    return NextResponse.json({ error: 'Database error' }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
   }
 }
 

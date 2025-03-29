@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+// Add ISR configuration
+export const revalidate = 3600 // Revalidate every hour
+
 export async function GET() {
   try {
     const lastRecord = await prisma.marketData.findFirst({
@@ -15,9 +18,18 @@ export async function GET() {
     return NextResponse.json({ 
       lastUpdate: lastRecord?.timestamp || null,
       needsUpdate
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+      }
     })
   } catch (error) {
     console.error('Error getting last update time:', error)
-    return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    return NextResponse.json({ error: 'Database error' }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
   }
 }

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+// Add ISR configuration
+export const revalidate = 3600 // Revalidate every hour
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -11,12 +14,21 @@ export async function GET(request: Request) {
       take: limit,
     })
 
-    return NextResponse.json(cryptoData)
+    return NextResponse.json(cryptoData, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+      }
+    })
   } catch (error) {
     console.error('Error fetching crypto data:', error)
     return NextResponse.json(
       { error: 'Failed to fetch crypto data', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
     )
   }
 }

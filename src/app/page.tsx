@@ -1,66 +1,97 @@
-"use client"
-
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetricCard } from "@/components/widgets/metric-card"
 import { PriceChart } from "@/components/charts/price-chart"
 import { MarketTable } from "@/components/widgets/market-table"
-import { useCryptoData } from "@/hooks/useCrypto"
-import { useState, useEffect } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from 'date-fns'
-import axios from "axios"
 import { CryptoArticle } from "../components/crypto-article"
+import prisma from '@/lib/prisma'
 
-interface HistoricalData {
-  coinId: string
-  symbol: string
-  data: { date: Date; value: number }[]
+export const revalidate = 3600 // Revalidate every hour
+
+async function getCryptoData() {
+  const cryptoData = await prisma.marketData.findMany({
+    orderBy: { timestamp: 'desc' },
+    take: 25,
+  })
+  return cryptoData
 }
 
-export default function Home() {
-  const { data: cryptoData, loading: cryptoLoading, lastUpdated } = useCryptoData()
-  const [historicalData, setHistoricalData] = useState<HistoricalData[]>([])
-  const [historyLoading, setHistoryLoading] = useState(true)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+async function getHistoricalData(symbol: string) {
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - 7)
 
-  useEffect(() => {
-    if (!cryptoData?.length) return
+  const historicalData = await prisma.marketData.findMany({
+    where: {
+      symbol: symbol.toUpperCase(),
+      timestamp: {
+        gte: startDate
+      }
+    },
+    orderBy: {
+      timestamp: 'asc'
+    },
+    select: {
+      price: true,
+      timestamp: true
+    }
+  })
 
-    const fetchHistoricalData = async () => {
-      try {
-        setHistoryLoading(true)
-        
-        const promises = cryptoData.map(async coin => {
-          try {
-            const response = await axios.get(`/api/crypto/history?symbol=${coin.symbol}&days=7`)
-            const historicalData = response.data
-            
-            return {
-              coinId: coin.id,
-              symbol: coin.symbol,
-              data: historicalData
-            }
-          } catch (error) {
-            console.error(`Error obteniendo datos históricos para ${coin.symbol}:`, error)
-            return null
-          }
-        })
+  return historicalData.map(record => ({
+    date: record.timestamp,
+    value: record.price
+  }))
+}
 
-        const results = await Promise.all(promises)
-        const validResults = results.filter(result => result !== null)
-        setHistoricalData(validResults)
-      } catch (error) {
-        console.error('Error obteniendo datos históricos:', error)
-      } finally {
-        setHistoryLoading(false)
+async function getLatestArticle() {
+  const now = new Date()
+  const startOfHour = new Date(now.setMinutes(0, 0, 0))
+  const endOfHour = new Date(now.setTime(now.getTime() + 60 * 60 * 1000 - 1))
+
+  const article = await prisma.article.findFirst({
+    where: {
+      createdAt: {
+        gte: startOfHour,
+        lte: endOfHour
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  return article
+}
+
+export default async function Home() {
+  const [cryptoData, article] = await Promise.all([
+    getCryptoData(),
+    getLatestArticle()
+  ])
+  const lastUpdated = cryptoData[0]?.timestamp
+
+  // Fetch historical data for all cryptocurrencies in parallel
+  const historicalDataPromises = cryptoData.map(async (coin) => {
+    try {
+      const data = await getHistoricalData(coin.symbol)
+      return {
+        coinId: coin.id,
+        symbol: coin.symbol,
+        data
+      }
+    } catch (error) {
+      console.error(`Error fetching historical data for ${coin.symbol}:`, error)
+      return {
+        coinId: coin.id,
+        symbol: coin.symbol,
+        data: []
       }
     }
+  })
 
-    fetchHistoricalData()
-  }, [cryptoData])
+  const historicalData = await Promise.all(historicalDataPromises)
 
   return (
     <DashboardShell>
@@ -115,7 +146,7 @@ export default function Home() {
                     [&_.performance]:font-medium [&_.performance]:text-muted-foreground
                     [&_.category-title]:text-lg [&_.category-title]:font-semibold [&_.category-title]:mt-6 [&_.category-title]:mb-2
                   ">
-                    <CryptoArticle />
+                    <CryptoArticle content={article?.content || 'No article available at this time.'} />
                   </div>
                 </div>
               </CardContent>
@@ -128,22 +159,18 @@ export default function Home() {
                 <CardTitle>Top Cryptocurrencies</CardTitle>
               </CardHeader>
               <CardContent>
-                {cryptoLoading ? (
-                  <Skeleton className="h-[600px]" />
-                ) : (
-                  <MarketTable 
-                    data={(cryptoData || [])
-                      .map(item => ({
-                        ...item,
-                        name: item.name || 'Unknown',
-                        volume: item.volume || '0'
-                      }))
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                    }
-                    loading={cryptoLoading}
-                    type="crypto"
-                  />
-                )}
+                <MarketTable 
+                  data={(cryptoData || [])
+                    .map(item => ({
+                      ...item,
+                      name: item.name || 'Unknown',
+                      volume: item.volume || '0'
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                  }
+                  loading={false}
+                  type="crypto"
+                />
               </CardContent>
             </Card>
           </div>
@@ -155,52 +182,39 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-2">
-              {historyLoading ? (
-                Array(25).fill(0).map((_, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <CardHeader className="p-4">
-                      <Skeleton className="h-4 w-24" />
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <Skeleton className="h-[200px]" />
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                historicalData
-                  .sort((a, b) => {
-                    const nameA = cryptoData.find(c => c.id === a.coinId)?.name || '';
-                    const nameB = cryptoData.find(c => c.id === b.coinId)?.name || '';
-                    return nameA.localeCompare(nameB);
-                  })
-                  .map((coin) => {
-                    const cryptoInfo = cryptoData.find(c => c.id === coin.coinId)
-                    return (
-                      <Card key={coin.coinId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                        <CardHeader className="p-4 bg-muted/50">
-                          <CardTitle className="text-sm font-medium">
-                            {coin.symbol} Price (7d)
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          <PriceChart
-                            data={coin.data}
-                            symbol={coin.symbol}
-                            showAxes={false}
-                            height={200}
-                          />
-                          <div className="p-4 text-sm text-muted-foreground border-t">
-                            <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
-                            <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
-                            <div className="text-xs mt-1">
-                              {cryptoInfo?.timestamp ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT' : '--'}
-                            </div>
+              {historicalData
+                .sort((a, b) => {
+                  const nameA = cryptoData.find(c => c.id === a.coinId)?.name || '';
+                  const nameB = cryptoData.find(c => c.id === b.coinId)?.name || '';
+                  return nameA.localeCompare(nameB);
+                })
+                .map(coin => {
+                  const cryptoInfo = cryptoData.find(c => c.id === coin.coinId)
+                  return (
+                    <Card key={coin.coinId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                      <CardHeader className="p-4 bg-muted/50">
+                        <CardTitle className="text-sm font-medium">
+                          {coin.symbol} Price (7d)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <PriceChart
+                          data={coin.data}
+                          symbol={coin.symbol}
+                          showAxes={false}
+                          height={200}
+                        />
+                        <div className="p-4 text-sm text-muted-foreground border-t">
+                          <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
+                          <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
+                          <div className="text-xs mt-1">
+                            {cryptoInfo?.timestamp ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT' : '--'}
                           </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })
-              )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
             </div>
           </CardContent>
         </Card>

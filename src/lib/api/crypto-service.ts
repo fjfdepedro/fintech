@@ -113,6 +113,27 @@ export const cryptoAPI = {
       console.error('Error getting last update time:', error)
       return null
     }
+  },
+
+  getHistoricalData: async (symbol: string) => {
+    const historicalData = await prisma.marketData.findMany({
+      where: {
+        symbol: symbol.toUpperCase()
+      },
+      orderBy: {
+        timestamp: 'desc'
+      },
+      take: 7,
+      select: {
+        timestamp: true,
+        price: true
+      }
+    })
+
+    return historicalData.map(data => [
+      data.timestamp.getTime(),
+      data.price
+    ])
   }
 }
 

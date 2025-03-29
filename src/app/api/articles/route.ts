@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma'
 import { newsAPI } from '@/lib/api/news-service'
 import { articleAPI } from '@/lib/api/article-service'
 
+// Add ISR configuration
+export const revalidate = 3600 // Revalidate every hour
+
 async function getLatestCryptoData() {
   const cryptoData = await prisma.marketData.findMany({
     where: {
@@ -40,6 +43,10 @@ export async function GET() {
       return NextResponse.json({
         ...existingArticle,
         timestamp: existingArticle.createdAt // Add timestamp for backwards compatibility
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+        }
       })
     }
 
@@ -59,12 +66,21 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(article)
+    return NextResponse.json(article, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+      }
+    })
   } catch (error) {
     console.error('Error generating article:', error)
     return NextResponse.json(
       { error: 'Failed to generate article' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
     )
   }
 }
