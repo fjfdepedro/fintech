@@ -160,18 +160,21 @@ Use professional financial language and focus on market analysis. Highlight any 
           minute: '2-digit', 
           hour12: false 
         })} GMT</div>\n\n`)
-        // Ensure title is correct without date
-        .replace(/^[\s\S]*?(?=\n)/, '<p><strong>Comprehensive Financial Analysis of Cryptocurrency Markets</strong></p>')
-        // Añadir clase al subtítulo
-        .replace(/(Combining Market Data with Recent News)/, '<div class="subtitle">$1</div>')
-        // Añadir clase a los números de sección
-        .replace(/^(\d+)\.\s+([^\n]+)/gm, '<span class="section-number">$1.</span> <span class="category-title">$2</span>')
-        // Añadir clase a las etiquetas Performance:
-        .replace(/Performance:/g, '<span class="performance">Performance:</span>')
-        // Mejorar el formato de las categorías
-        .replace(/^(Layer \d|DeFi|Meme Coins|Emerging Ecosystems|Stablecoins):/gm, '<span class="category-title">$1:</span>')
+        // Ensure title is correct and formatted
+        .replace(/^.*?Comprehensive Financial Analysis of Cryptocurrency Markets.*?\n/m, '<h1 class="text-3xl font-bold mb-6">Comprehensive Financial Analysis of Cryptocurrency Markets</h1>\n')
+        // Format section headers
+        .replace(/^(\d+)\.\s+([^\n]+)/gm, '<h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b">$1. $2</h2>')
+        // Format category headers
+        .replace(/^(Layer \d|DeFi|Meme Coins|Emerging Ecosystems|Stablecoins):/gm, '<h3 class="text-xl font-medium mt-6 mb-3">$1</h3>')
+        // Format performance and other labels
+        .replace(/Performance:/g, '<span class="font-medium text-muted-foreground">Performance:</span>')
+        .replace(/News Impact:/g, '<span class="font-medium text-muted-foreground">News Impact:</span>')
+        .replace(/Trends:/g, '<span class="font-medium text-muted-foreground">Trends:</span>')
+        .replace(/Future Implications:/g, '<span class="font-medium text-muted-foreground">Future Implications:</span>')
+        // Remove any remaining subtitle class references
+        .replace(/<div class="subtitle">.*?<\/div>/g, '')
 
-      // Convert markdown to HTML
+      // Convert markdown to HTML with specific options
       const htmlContent = await marked(processedContent, {
         gfm: true,
         breaks: true

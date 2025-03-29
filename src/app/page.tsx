@@ -154,7 +154,7 @@ export default function Home() {
             <CardTitle>Cryptocurrency Price Charts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2">
               {historyLoading ? (
                 Array(25).fill(0).map((_, i) => (
                   <Card key={i} className="overflow-hidden">
@@ -192,7 +192,9 @@ export default function Home() {
                           <div className="p-4 text-sm text-muted-foreground border-t">
                             <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
                             <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
-                            <div className="text-xs mt-1">Updated: {cryptoInfo?.timestamp ? format(new Date(cryptoInfo.timestamp), 'MM/dd/yyyy HH:mm') : '--'}</div>
+                            <div className="text-xs mt-1">
+                              {cryptoInfo?.timestamp ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT' : '--'}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

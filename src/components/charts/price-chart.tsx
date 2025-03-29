@@ -44,56 +44,72 @@ export function PriceChart({
   title, 
   symbol, 
   showAxes = true,
-  height = 400,
+  height = 300,
   className = ""
 }: PriceChartProps) {
-  // Usar el símbolo para determinar el color
   const color = getColorForSymbol(symbol)
 
+  const formattedData = data.map(point => ({
+    date: format(new Date(point.date), 'HH:mm'),
+    [symbol]: point.value
+  }))
+
+  const customTooltip = ({ payload, active, label }: any) => {
+    if (!active || !payload) return null;
+
+    // Encontrar el dato original que corresponde a esta hora
+    const originalData = data.find(d => 
+      format(new Date(d.date), 'HH:mm') === label
+    );
+
+    return (
+      <div className="w-56 rounded-tremor-default border border-tremor-border bg-tremor-background p-2 text-tremor-default shadow-tremor-dropdown">
+        <div className="flex flex-1 space-x-2.5">
+          <div className={`flex w-1 flex-col bg-${color}-500 rounded`} />
+          <div className="space-y-1">
+            <p className="text-tremor-content text-xs">
+              {format(new Date(originalData?.date || data[0].date), 'MMM dd, HH:mm')}
+            </p>
+            <p className="font-medium text-tremor-content-emphasis">
+              ${Number(payload[0].value).toFixed(2)}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const minValue = Math.min(...data.map(d => d.value)) * 0.995;
+  const maxValue = Math.max(...data.map(d => d.value)) * 1.005;
+
   const chart = (
-    <div style={{ height: `${height}px` }}>
+    <div style={{ height: `${height}px` }} className="relative">
       <AreaChart
-        data={data}
+        className="h-full w-full [&_svg]:!overflow-visible
+          [&_path[fill]]:!opacity-40 
+          [&_path[stroke]]:!stroke-[2] 
+          [&_.tremor-AreaChart-axisLine]:hidden 
+          [&_text]:!text-[10px]
+          [&_text]:!text-muted-foreground/60
+          [&_.tremor-AreaChart-line]:!hidden"
+        data={formattedData}
         index="date"
-        categories={["value"]}
+        categories={[symbol]}
         colors={[color]}
-        yAxisWidth={showAxes ? 60 : 0}
-        showXAxis={showAxes}
-        showYAxis={showAxes}
-        showAnimation
-        className="h-full"
-        customTooltip={({ payload, active }) => {
-          if (!active || !payload || !payload[0]?.value) return null;
-          
-          const value = Array.isArray(payload[0].value) 
-            ? payload[0].value[0] 
-            : payload[0].value;
-          
-          const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-          
-          return (
-            <div className="rounded-lg border bg-background p-2 shadow-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col">
-                  <span className="text-[0.70rem] uppercase text-muted-foreground">
-                    Date
-                  </span>
-                  <span className="font-bold text-muted-foreground">
-                    {format(new Date(payload[0].payload.date), "MM/dd/yyyy HH:mm")}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[0.70rem] uppercase text-muted-foreground">
-                    Price
-                  </span>
-                  <span className="font-bold">
-                    ${numericValue.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )
-        }}
+        valueFormatter={(value) => `$${Number(value).toFixed(2)}`}
+        showYAxis={true}
+        showXAxis={true}
+        showLegend={false}
+        showGridLines={false}
+        showTooltip={true}
+        customTooltip={customTooltip}
+        minValue={minValue}
+        maxValue={maxValue}
+        startEndOnly={true}
+        autoMinValue={false}
+        curveType="natural"
+        yAxisWidth={42}
+        showGradient={false}
       />
     </div>
   )
@@ -101,11 +117,13 @@ export function PriceChart({
   if (!title) return chart
 
   return (
-    <Card className={`col-span-4 ${className}`}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+    <Card className={`overflow-hidden ${className}`}>
+      <CardHeader className="p-4 bg-muted/50">
+        <CardTitle className="text-sm font-medium">
+          {title}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {chart}
       </CardContent>
     </Card>
