@@ -1,10 +1,6 @@
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MetricCard } from "@/components/widgets/metric-card"
 import { PriceChart } from "@/components/charts/price-chart"
 import { MarketTable } from "@/components/widgets/market-table"
-import { Skeleton } from "@/components/ui/skeleton"
 import { format } from 'date-fns'
 import { CryptoArticle } from "../components/crypto-article"
 import prisma from '@/lib/prisma'
@@ -124,29 +120,26 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <DashboardShell>
-        <DashboardHeader
-          heading={
-            <div className="flex items-center gap-3 px-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-8 w-8"
-                aria-hidden="true"
-              >
-                <path d="M12 2v20M2 12h20M7 17l5-5 5 5M7 7l5 5 5-5" />
-              </svg>
-              <h1 className="font-bold text-2xl">
-                Crypto Market Insights
-              </h1>
-            </div>
-          }
-        />
+      <div className="container mx-auto p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-8 w-8"
+            aria-hidden="true"
+          >
+            <path d="M12 2v20M2 12h20M7 17l5-5 5 5M7 7l5 5 5-5" />
+          </svg>
+          <h1 className="font-bold text-2xl">
+            Crypto Market Insights
+          </h1>
+        </div>
+
         <main className="grid gap-6">
           <section className="grid gap-6 lg:grid-cols-5">
             <article className="lg:col-span-3">
@@ -252,7 +245,7 @@ export default async function Home() {
             </Card>
           </section>
         </main>
-      </DashboardShell>
+      </div>
     </>
   )
 }

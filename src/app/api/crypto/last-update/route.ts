@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
-// Add ISR configuration
+// Forzar que no se cachee
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -11,27 +11,16 @@ export async function GET() {
       orderBy: { timestamp: 'desc' }
     })
     
-    // Si el último registro es más antiguo de 1 hora, permitir actualización
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
     const needsUpdate = !lastRecord || lastRecord.timestamp < oneHourAgo
     
     return NextResponse.json({ 
       lastUpdate: lastRecord?.timestamp,
-      needsUpdate,
-      ageInHours: lastRecord ? (now.getTime() - lastRecord.timestamp.getTime()) / (60 * 60 * 1000) : null
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
-      }
+      needsUpdate
     })
   } catch (error) {
-    console.error('Error getting last update time:', error)
-    return NextResponse.json({ error: 'Database error' }, { 
-      status: 500,
-      headers: {
-        'Cache-Control': 'no-store'
-      }
-    })
+    console.error('Error verificando última actualización:', error)
+    return NextResponse.json({ error: 'Database error' }, { status: 500 })
   }
 }

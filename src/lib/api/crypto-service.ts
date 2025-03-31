@@ -4,41 +4,53 @@ import axiosRetry from 'axios-retry'
 import { PrismaClient } from '@prisma/client'
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3'
+const COINGECKO_API_KEY = process.env.NEXT_PUBLIC_COINGECKO_API_KEY
 const prisma = new PrismaClient()
 
-axiosRetry(axios, {
-  retries: 3, // Número de reintentos
-  retryDelay: (retryCount) => retryCount * 1000, // Intervalo entre reintentos
-  retryCondition: (error) => error.response?.status === 429, // Reintentar solo en error 429
+// Configurar headers por defecto para todas las llamadas a CoinGecko
+const coingeckoAxios = axios.create({
+  baseURL: COINGECKO_API_URL,
+  headers: {
+    'x-cg-demo-api-key': COINGECKO_API_KEY
+  }
 })
+
+// Configurar retry para el cliente específico de CoinGecko
+axiosRetry(coingeckoAxios, {
+  retries: 3,
+  retryDelay: (retryCount) => retryCount * 1000,
+  retryCondition: (error) => error.response?.status === 429,
+})
+
+// Lista de criptomonedas específicas que queremos seguir
+const specificCoins = [
+  // Criptomonedas originales
+  'bitcoin', 'ethereum', 'solana', 'binancecoin', 'ripple',
+  'tether', 'cardano', 'dogecoin', 'sui', 'arbitrum',
+  'algorand', 'floki', 'toncoin',
+  'polkadot', 'polygon', 'avalanche-2', 'chainlink', 'uniswap',
+  'stellar', 'cosmos', 'optimism', 'near', 'aptos',
+  'injective-protocol', 'sei-network'
+]
 
 export const cryptoAPI = {
   async getTopCryptos(limit: number = 25): Promise<MarketData[]> {
     try {
-      // Lista específica de criptomonedas que queremos seguir
-      const specificCoins = [
-        // Criptomonedas originales
-        'bitcoin', 'ethereum', 'solana', 'binancecoin', 'ripple',
-        'tether', 'cardano', 'dogecoin', 'sui', 'arbitrum',
-        'algorand', 'floki', 'toncoin',
-        'polkadot', 'polygon', 'avalanche-2', 'chainlink', 'uniswap',
-        'stellar', 'cosmos', 'optimism', 'near', 'aptos',
-        'injective-protocol', 'sei-network'
-      ]
-
-      const response = await axios.get(`${COINGECKO_API_URL}/coins/markets`, {
+      console.log('Llamando a CoinGecko API...')
+      
+      const response = await coingeckoAxios.get('/coins/markets', {
         params: {
           vs_currency: 'usd',
           ids: specificCoins.join(','),
           order: 'market_cap_desc',
           per_page: limit,
-          page: 1,
-          sparkline: false,
-        },
+          sparkline: false
+        }
       })
-
+      
+      console.log('Respuesta de CoinGecko recibida:', response.data.length, 'registros')
+      
       return response.data.map((coin: any) => ({
-        id: coin.id,
         symbol: coin.symbol.toUpperCase(),
         name: coin.name,
         price: coin.current_price,
@@ -46,18 +58,18 @@ export const cryptoAPI = {
         volume: coin.total_volume.toString(),
         market_cap: coin.market_cap,
         type: 'CRYPTO',
-        timestamp: new Date(),
+        timestamp: new Date()
       }))
     } catch (error) {
-      console.error('Error fetching crypto data:', error)
+      console.error('Error obteniendo datos de CoinGecko:', error)
       throw error
     }
   },
 
   async getMarketChart(coinId: string, days: number = 7) {
     try {
-      const response = await axios.get(
-        `${COINGECKO_API_URL}/coins/${coinId}/market_chart`,
+      const response = await coingeckoAxios.get(
+        `/coins/${coinId}/market_chart`,
         {
           params: {
             vs_currency: 'usd',
@@ -75,7 +87,7 @@ export const cryptoAPI = {
 
   async getTrendingCoins() {
     try {
-      const response = await axios.get(`${COINGECKO_API_URL}/search/trending`)
+      const response = await coingeckoAxios.get('/search/trending')
       return response.data.coins
     } catch (error) {
       console.error('Error fetching trending coins:', error)
@@ -85,7 +97,7 @@ export const cryptoAPI = {
 
   async getGlobalData() {
     try {
-      const response = await axios.get(`${COINGECKO_API_URL}/global`)
+      const response = await coingeckoAxios.get('/global')
       return response.data.data
     } catch (error) {
       console.error('Error fetching global data:', error)

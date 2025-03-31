@@ -44,9 +44,28 @@ const publicApiRoutes = [
   '/api/articles'
 ]
 
+// List of cron job routes that require CRON_SECRET
+const cronRoutes = [
+  '/api/cron/update-crypto',
+  '/api/cron/update-article'
+]
+
 export async function middleware(request: NextRequest) {
-  // Get the pathname
   const path = request.nextUrl.pathname
+
+  // Check if it's a cron route
+  if (cronRoutes.some(route => path.startsWith(route))) {
+    const authHeader = request.headers.get('Authorization')
+    const cronSecret = process.env.CRON_SECRET
+
+    if (!authHeader || !cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid cron secret' },
+        { status: 401 }
+      )
+    }
+    return NextResponse.next()
+  }
 
   // Check if it's an API route
   if (path.startsWith('/api/')) {

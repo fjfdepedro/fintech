@@ -24,12 +24,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
+      { url: '/favicon.ico', sizes: '32x32' },
       { url: '/manifest-icon-192x192.png', sizes: '192x192', type: 'image/png' }
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
     ],
+    shortcut: ['/favicon.ico'],
   },
   manifest: '/manifest.json',
   openGraph: {
@@ -45,6 +46,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: "CryptoToday Platform Preview",
+        type: "image/jpeg",
       },
     ],
   },
@@ -69,6 +71,15 @@ export const metadata: Metadata = {
   verification: {
     google: 'your-google-site-verification', // Add your Google Search Console verification code
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' }
+  ],
 };
 
 export default function RootLayout({
@@ -82,8 +93,8 @@ export default function RootLayout({
         <GoogleAnalytics />
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}

@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/update-crypto",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/update-article",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

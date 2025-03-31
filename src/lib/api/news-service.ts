@@ -1,5 +1,13 @@
 import axios from 'axios'
 
+export interface NewsArticle {
+  title: string
+  description: string | null
+  pubDate: string
+  source_name: string
+  duplicate?: boolean
+}
+
 const NEWSDATA_API_KEY = process.env.NEWSDATA_API_KEY
 const NEWSDATA_API_URL = 'https://newsdata.io/api/1'
 
@@ -44,14 +52,6 @@ interface NewsResponse {
   status: string
   totalResults: number
   results: NewsArticle[]
-}
-
-export interface NewsArticle {
-  title: string
-  description: string | null
-  pubDate: string
-  source_name: string
-  duplicate?: boolean
 }
 
 export const newsAPI = {
@@ -202,5 +202,15 @@ export const newsAPI = {
       console.error(`Error fetching news for ${symbol}:`, error)
       return []
     }
+  },
+
+  async generateArticle(cryptoData: any[]) {
+    const topCoins = cryptoData.slice(0, 5)
+    const article = `Análisis del mercado de criptomonedas:\n\n` +
+      topCoins.map(coin => 
+        `${coin.name} (${coin.symbol}): $${coin.price.toFixed(2)} (${coin.change.toFixed(2)}%)`
+      ).join('\n')
+    
+    return article
   }
 }
