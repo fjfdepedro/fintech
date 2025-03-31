@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /login/
+Disallow: /register/
+Disallow: /profile/
+Disallow: /settings/
+Disallow: /api/*
+Disallow: /*?*
+Disallow: /*/api/
+Disallow: /*/_next/
+Disallow: /*/static/
+Disallow: /*/admin/
+Disallow: /*/dashboard/
+Disallow: /*/auth/
+Disallow: /*/login/
+Disallow: /*/register/
+Disallow: /*/profile/
+Disallow: /*/settings/
+
+Sitemap: https://www.cryptotoday.click/sitemap.xml

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 // Add ISR configuration
-export const revalidate = 3600 // Revalidate every hour
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET() {
   try {
@@ -16,8 +17,9 @@ export async function GET() {
     const needsUpdate = !lastRecord || lastRecord.timestamp < oneHourAgo
     
     return NextResponse.json({ 
-      lastUpdate: lastRecord?.timestamp || null,
-      needsUpdate
+      lastUpdate: lastRecord?.timestamp,
+      needsUpdate,
+      ageInHours: lastRecord ? (now.getTime() - lastRecord.timestamp.getTime()) / (60 * 60 * 1000) : null
     }, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
