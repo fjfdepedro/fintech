@@ -113,6 +113,11 @@ export default async function Home() {
     }
   }
 
+  // Ensure consistent date formatting
+  const formattedLastUpdated = lastUpdated 
+    ? format(new Date(lastUpdated), 'MMMM d, yyyy') + ' at ' + format(new Date(lastUpdated), 'HH:mm') + ' GMT'
+    : '--'
+
   return (
     <>
       <Script
@@ -147,7 +152,7 @@ export default async function Home() {
                 <CardHeader>
                   <h2 className="text-2xl font-bold">Daily Crypto Analysis</h2>
                   <time className="text-sm text-muted-foreground">
-                    Last Update: {lastUpdated ? format(new Date(lastUpdated), 'MMMM d, yyyy') + ' at ' + format(new Date(lastUpdated), 'HH:mm') + ' GMT' : '--'}
+                    Last Update: {formattedLastUpdated}
                   </time>
                 </CardHeader>
                 <CardContent>
@@ -215,6 +220,9 @@ export default async function Home() {
                     })
                     .map(coin => {
                       const cryptoInfo = cryptoData.find(c => c.id === coin.coinId)
+                      const formattedTimestamp = cryptoInfo?.timestamp 
+                        ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT'
+                        : '--'
                       return (
                         <article key={coin.coinId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
                           <CardHeader className="p-4 bg-muted/50">
@@ -233,7 +241,7 @@ export default async function Home() {
                               <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
                               <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
                               <time className="text-xs mt-1 block">
-                                {cryptoInfo?.timestamp ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT' : '--'}
+                                {formattedTimestamp}
                               </time>
                             </div>
                           </CardContent>
