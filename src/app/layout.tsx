@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import GoogleAnalytics from '@/components/google-analytics'
+import { AutoUpdater } from '@/components/auto-updater'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -97,6 +98,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
+          <AutoUpdater />
           {children}
         </ThemeProvider>
       </body>
