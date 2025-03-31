@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import axios from 'axios'
+import { checkForUpdates, updateCrypto, updateArticle } from '@/app/actions/update'
 
 const HOUR_IN_MS = 60 * 60 * 1000 // 1 hora en milisegundos
 const RETRY_INTERVAL = 5 * 60 * 1000 // 5 minutos en caso de error
@@ -16,7 +16,7 @@ export function useAutoUpdate() {
     updateInProgressRef.current = true
 
     try {
-      const { data: updateStatus } = await axios.get('/api/crypto/last-update')
+      const updateStatus = await checkForUpdates()
       const now = new Date()
       
       // Verificar actualización de crypto
@@ -30,14 +30,14 @@ export function useAutoUpdate() {
 
       if (needsCryptoUpdate) {
         console.log('Iniciando actualización de datos crypto...')
-        await axios.get('/api/cron/update-crypto')
+        await updateCrypto()
         lastCryptoUpdateRef.current = now
         console.log('Actualización de crypto completada')
       }
 
       if (needsArticleUpdate) {
         console.log('Iniciando actualización de artículo...')
-        await axios.get('/api/cron/update-article')
+        await updateArticle()
         lastArticleUpdateRef.current = now
         console.log('Actualización de artículo completada')
       }

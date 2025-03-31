@@ -1,11 +1,12 @@
-export const dynamic = 'force-dynamic'
-
 import { NextResponse } from 'next/server'
 import { newsAPI } from '@/lib/api/news-service'
 import { articleAPI } from '@/lib/api/article-service'
 import prisma from '@/lib/prisma'
 
-export async function GET() {
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+export async function POST() {
   try {
     console.log('Iniciando actualización de artículo...')
     
