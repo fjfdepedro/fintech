@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { checkForUpdates, updateCrypto, updateArticle } from '@/app/actions/update'
 
 const HOUR_IN_MS = 60 * 60 * 1000 // 1 hora en milisegundos
@@ -11,7 +11,7 @@ export function useAutoUpdate() {
   const lastArticleUpdateRef = useRef<Date | null>(null)
   const updateInProgressRef = useRef(false)
 
-  const checkAndUpdate = async () => {
+  const checkAndUpdate = useCallback(async () => {
     if (updateInProgressRef.current) return
     updateInProgressRef.current = true
 
@@ -29,17 +29,13 @@ export function useAutoUpdate() {
         (now.getTime() - lastArticleUpdateRef.current.getTime()) > HOUR_IN_MS
 
       if (needsCryptoUpdate) {
-        console.log('Iniciando actualización de datos crypto...')
         await updateCrypto()
         lastCryptoUpdateRef.current = now
-        console.log('Actualización de crypto completada')
       }
 
       if (needsArticleUpdate) {
-        console.log('Iniciando actualización de artículo...')
         await updateArticle()
         lastArticleUpdateRef.current = now
-        console.log('Actualización de artículo completada')
       }
     } catch (error) {
       console.error('Error en actualización automática:', error)
@@ -48,33 +44,41 @@ export function useAutoUpdate() {
     } finally {
       updateInProgressRef.current = false
     }
-  }
+  }, [])
 
   useEffect(() => {
+    let mounted = true
+
+    const performUpdate = async () => {
+      if (!mounted) return
+      await checkAndUpdate()
+    }
+
     // Verificar al montar el componente
-    checkAndUpdate()
+    performUpdate()
 
     // Configurar verificación periódica cada 5 minutos
     const interval = setInterval(() => {
       // Solo verificar si el usuario está activo (página visible)
-      if (document.visibilityState === 'visible') {
-        checkAndUpdate()
+      if (document.visibilityState === 'visible' && mounted) {
+        performUpdate()
       }
     }, 5 * 60 * 1000) // Verificar cada 5 minutos
 
     // Verificar cuando la página vuelve a estar visible
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkAndUpdate()
+      if (document.visibilityState === 'visible' && mounted) {
+        performUpdate()
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      mounted = false
       clearInterval(interval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [])
+  }, [checkAndUpdate])
 
   return null
 } 
