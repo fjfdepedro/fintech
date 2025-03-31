@@ -118,6 +118,13 @@ export default async function Home() {
     ? format(new Date(lastUpdated), 'MMMM d, yyyy') + ' at ' + format(new Date(lastUpdated), 'HH:mm') + ' GMT'
     : '--'
 
+  // Sort historical data consistently
+  const sortedHistoricalData = [...historicalData].sort((a, b) => {
+    const nameA = cryptoData.find(c => c.id === a.coinId)?.name || '';
+    const nameB = cryptoData.find(c => c.id === b.coinId)?.name || '';
+    return nameA.localeCompare(nameB);
+  })
+
   return (
     <>
       <Script
@@ -212,42 +219,36 @@ export default async function Home() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-2">
-                  {historicalData
-                    .sort((a, b) => {
-                      const nameA = cryptoData.find(c => c.id === a.coinId)?.name || '';
-                      const nameB = cryptoData.find(c => c.id === b.coinId)?.name || '';
-                      return nameA.localeCompare(nameB);
-                    })
-                    .map(coin => {
-                      const cryptoInfo = cryptoData.find(c => c.id === coin.coinId)
-                      const formattedTimestamp = cryptoInfo?.timestamp 
-                        ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT'
-                        : '--'
-                      return (
-                        <article key={coin.coinId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                          <CardHeader className="p-4 bg-muted/50">
-                            <h3 className="text-sm font-medium">
-                              {coin.symbol} Price (7d)
-                            </h3>
-                          </CardHeader>
-                          <CardContent className="p-0">
-                            <PriceChart
-                              data={coin.data}
-                              symbol={coin.symbol}
-                              showAxes={false}
-                              height={200}
-                            />
-                            <div className="p-4 text-sm text-muted-foreground border-t">
-                              <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
-                              <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
-                              <time className="text-xs mt-1 block">
-                                {formattedTimestamp}
-                              </time>
-                            </div>
-                          </CardContent>
-                        </article>
-                      )
-                    })}
+                  {sortedHistoricalData.map(coin => {
+                    const cryptoInfo = cryptoData.find(c => c.id === coin.coinId)
+                    const formattedTimestamp = cryptoInfo?.timestamp 
+                      ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT'
+                      : '--'
+                    return (
+                      <article key={coin.coinId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                        <CardHeader className="p-4 bg-muted/50">
+                          <h3 className="text-sm font-medium">
+                            {coin.symbol} Price (7d)
+                          </h3>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <PriceChart
+                            data={coin.data}
+                            symbol={coin.symbol}
+                            showAxes={false}
+                            height={200}
+                          />
+                          <div className="p-4 text-sm text-muted-foreground border-t">
+                            <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
+                            <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
+                            <time className="text-xs mt-1 block">
+                              {formattedTimestamp}
+                            </time>
+                          </div>
+                        </CardContent>
+                      </article>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
