@@ -31,6 +31,7 @@ export async function updateCrypto() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.CRON_SECRET}`
       },
     })
     return response.json()
