@@ -27,11 +27,10 @@ export async function checkForUpdates() {
 
 export async function updateCrypto() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/cron/update-crypto`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/cron/update-crypto?secret=${process.env.CRON_SECRET}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CRON_SECRET}`
+        'Content-Type': 'application/json'
       },
     })
     return response.json()
@@ -43,10 +42,10 @@ export async function updateCrypto() {
 
 export async function updateArticle() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/cron/update-article`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/cron/update-article?secret=${process.env.CRON_SECRET}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
     })
     return response.json()
