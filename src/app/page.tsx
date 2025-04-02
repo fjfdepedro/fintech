@@ -4,30 +4,22 @@ import { MarketTable } from "@/components/widgets/market-table"
 import { format } from 'date-fns'
 import { CryptoArticle } from "../components/crypto-article"
 import { Header } from "@/components/header"
+import { checkAndUpdateCryptoData, getLatestCryptoData } from "@/lib/services/crypto-service"
 import prisma from '@/lib/prisma'
 import Script from 'next/script'
+import { CryptoData, HistoricalDataPoint, HistoricalCryptoData } from "@/types/crypto"
 
 export const revalidate = 3600 // Revalidate every hour
 
-async function getCryptoData() {
-  const symbols = await prisma.marketData.findMany({
-    select: { symbol: true },
-    distinct: ['symbol']
-  })
-
-  const cryptoData = await prisma.marketData.findMany({
-    where: {
-      symbol: { in: symbols.map(s => s.symbol) }
-    },
-    orderBy: { timestamp: 'desc' },
-    distinct: ['symbol'],
-    take: 25
-  })
-
-  return cryptoData
+async function getCryptoData(): Promise<CryptoData[]> {
+  // Check and update if needed
+  await checkAndUpdateCryptoData()
+  
+  // Always return latest data
+  return getLatestCryptoData()
 }
 
-async function getHistoricalData(symbol: string) {
+async function getHistoricalData(symbol: string): Promise<HistoricalDataPoint[]> {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - 7)
 
@@ -71,7 +63,7 @@ export default async function Home() {
   const lastUpdated = cryptoData[0]?.timestamp
 
   // Fetch historical data for all cryptocurrencies in parallel
-  const historicalDataPromises = cryptoData.map(async (coin) => {
+  const historicalDataPromises = cryptoData.map(async (coin: CryptoData): Promise<HistoricalCryptoData> => {
     try {
       const data = await getHistoricalData(coin.symbol)
       return {
@@ -100,7 +92,7 @@ export default async function Home() {
     "dateModified": lastUpdated ? new Date(lastUpdated).toISOString() : new Date().toISOString(),
     "mainEntity": {
       "@type": "DataFeed",
-      "dataFeedElement": cryptoData.map(coin => ({
+      "dataFeedElement": cryptoData.map((coin: CryptoData) => ({
         "@type": "DataFeedItem",
         "item": {
           "@type": "FinancialProduct",
@@ -120,9 +112,9 @@ export default async function Home() {
     : '--'
 
   // Sort historical data consistently
-  const sortedHistoricalData = [...historicalData].sort((a, b) => {
-    const nameA = cryptoData.find(c => c.id === a.coinId)?.name || '';
-    const nameB = cryptoData.find(c => c.id === b.coinId)?.name || '';
+  const sortedHistoricalData = [...historicalData].sort((a: HistoricalCryptoData, b: HistoricalCryptoData) => {
+    const nameA = cryptoData.find((c: CryptoData) => c.id === a.coinId)?.name || '';
+    const nameB = cryptoData.find((c: CryptoData) => c.id === b.coinId)?.name || '';
     return nameA.localeCompare(nameB);
   })
 
@@ -161,7 +153,7 @@ export default async function Home() {
                   </CardHeader>
                   <CardContent className="py-2 px-3">
                     <div className="text-2xl font-bold">
-                      ${(cryptoData.reduce((acc, coin) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
+                      ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Total value of all cryptocurrencies at current prices
@@ -174,7 +166,7 @@ export default async function Home() {
                   </CardHeader>
                   <CardContent className="py-2 px-3">
                     <div className="text-2xl font-bold">
-                      ${(cryptoData.reduce((acc, coin) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
+                      ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Amount traded across all pairs in the last 24 hours
@@ -187,7 +179,7 @@ export default async function Home() {
                   </CardHeader>
                   <CardContent className="py-2 px-3">
                     <div className="text-2xl font-bold">
-                      {cryptoData.filter(coin => coin.price > 0).length}
+                      {cryptoData.filter((coin: CryptoData) => coin.price > 0).length}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Number of cryptocurrencies currently being tracked
@@ -203,12 +195,12 @@ export default async function Home() {
                 <CardContent>
                   <MarketTable 
                     data={(cryptoData || [])
-                      .map(item => ({
+                      .map((item: CryptoData) => ({
                         ...item,
                         name: item.name || 'Unknown',
                         volume: item.volume || '0'
                       }))
-                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .sort((a: CryptoData, b: CryptoData) => a.name.localeCompare(b.name))
                     }
                     loading={false}
                     type="crypto"
@@ -226,9 +218,9 @@ export default async function Home() {
                       <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Performers (24h)</h3>
                       <div className="space-y-2">
                         {cryptoData
-                          .sort((a, b) => b.change - a.change)
+                          .sort((a: CryptoData, b: CryptoData) => b.change - a.change)
                           .slice(0, 3)
-                          .map(coin => (
+                          .map((coin: CryptoData) => (
                             <div key={coin.symbol} className="flex items-center justify-between">
                               <span className="text-sm">{coin.symbol}</span>
                               <span className="text-sm text-green-500">+{coin.change.toFixed(2)}%</span>
@@ -241,9 +233,9 @@ export default async function Home() {
                       <h3 className="text-sm font-medium text-muted-foreground mb-2">Highest Volume (24h)</h3>
                       <div className="space-y-2">
                         {cryptoData
-                          .sort((a, b) => Number(b.volume) - Number(a.volume))
+                          .sort((a: CryptoData, b: CryptoData) => Number(b.volume) - Number(a.volume))
                           .slice(0, 3)
-                          .map(coin => (
+                          .map((coin: CryptoData) => (
                             <div key={coin.symbol} className="flex items-center justify-between">
                               <span className="text-sm">{coin.symbol}</span>
                               <span className="text-sm">${(Number(coin.volume) / 1e9).toFixed(2)}B</span>
@@ -265,8 +257,8 @@ export default async function Home() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-2">
-                  {sortedHistoricalData.map(coin => {
-                    const cryptoInfo = cryptoData.find(c => c.id === coin.coinId)
+                  {sortedHistoricalData.map((coin: HistoricalCryptoData) => {
+                    const cryptoInfo = cryptoData.find((c: CryptoData) => c.id === coin.coinId)
                     const formattedTimestamp = cryptoInfo?.timestamp 
                       ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT'
                       : '--'

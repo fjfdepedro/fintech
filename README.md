@@ -5,40 +5,89 @@ A comprehensive financial dashboard built with Next.js 14, TypeScript, and Prism
 ## Features
 
 ### Real-time Data & Auto-Updates
-- Hourly automatic updates of cryptocurrency data from CoinGecko API
+- Automatic updates of cryptocurrency data from CoinGecko API
 - AI-powered market analysis using QWen API
 - Incremental Static Regeneration (ISR) with smart caching
 - Automatic retry mechanism for failed updates
 
-### Technical Implementation
+### Cache & Data Update System
 
-#### 1. Automatic Revalidation (ISR)
+#### 1. Cache Revalidation
 ```typescript
-// In src/app/page.tsx and layout.tsx
+// In src/app/page.tsx
 export const revalidate = 3600 // Hourly revalidation
 ```
 
-#### 2. Auto-Update System
+#### 2. Data Update Interval
 ```typescript
-// Components and hooks working together
-AutoUpdater -> useAutoUpdate -> Update Actions -> Revalidation
+// In src/lib/services/crypto-service.ts
+const UPDATE_INTERVAL = 55 * 60 * 1000 // 55 minutes
 ```
 
 #### 3. Update Flow
 ```typescript
-// Hourly checks for:
-- Cryptocurrency data updates
-- Market analysis generation
-- Cache revalidation
+// Data Update Process:
+1. Page Load
+   ├─> Check Cache Validity (< 1 hour)
+   │   ├─> Valid: Serve from Cache
+   │   └─> Invalid: Execute getCryptoData()
+   │
+   └─> getCryptoData()
+       ├─> checkAndUpdateCryptoData()
+       │   ├─> Check Last Update Time
+       │   │   ├─> > 55 minutes: Update Data
+       │   │   └─> ≤ 55 minutes: Use Existing Data
+       │   │
+       │   └─> Update Process
+       │       ├─> Fetch from CoinGecko API
+       │       ├─> Save to Database
+       │       └─> Revalidate Cache
+       │
+       └─> getLatestCryptoData()
+           ├─> Query Database
+           ├─> Get Latest Records
+           └─> Return Top 25 by Market Cap
 ```
 
-#### 4. Error Handling & Reliability
-- Maximum 3 retry attempts
-- 5-minute intervals between retries
-- Comprehensive error logging
-- Automatic recovery mechanisms
+#### 4. Error Handling
+```typescript
+// Error Recovery Process:
+1. API Error
+   ├─> Log Error
+   ├─> Return Existing Data
+   └─> Skip Cache Revalidation
 
-### Cache Management
+2. Database Error
+   ├─> Log Error
+   ├─> Return Empty Array
+   └─> Show Error State
+
+3. Query Error
+   ├─> Log Error
+   ├─> Return Empty Array
+   └─> Show Error State
+```
+
+### Technical Implementation
+
+#### 1. Database Queries
+```typescript
+// Optimized Latest Data Query
+const latestData = await prisma.$queryRaw<CryptoData[]>`
+  WITH RankedData AS (
+    SELECT *,
+      ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY timestamp DESC) as rn
+    FROM "MarketData"
+    WHERE type = 'CRYPTO'
+  )
+  SELECT * FROM RankedData 
+  WHERE rn = 1
+  ORDER BY market_cap DESC
+  LIMIT 25
+`
+```
+
+#### 2. Cache Management
 ```typescript
 // Optimized Vercel CDN Headers
 headers: {
@@ -51,9 +100,9 @@ headers: {
 ### Update System Details
 - **Cache Duration**: 1 hour (3600 seconds) for all routes
 - **Update Cycle**:
-  - Cryptocurrency data updates every hour
-  - New article generation after crypto updates
-  - Automatic cache revalidation after updates
+  - Cryptocurrency data updates every 55 minutes
+  - Cache revalidation every hour
+  - 5-minute buffer between update and revalidation
 - **Protected Routes**:
   - `/api/cron/update-crypto`
   - `/api/cron/update-article`

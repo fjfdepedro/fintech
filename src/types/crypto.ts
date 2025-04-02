@@ -23,4 +23,27 @@ export interface MarketData {
   atl_date: string
   last_updated: string
   timestamp: Date
+}
+
+export interface CryptoData {
+  id: string
+  name: string
+  symbol: string
+  price: number
+  change: number
+  volume: string
+  market_cap: number
+  timestamp: Date
+  type: string
+}
+
+export interface HistoricalDataPoint {
+  date: Date
+  value: number
+}
+
+export interface HistoricalCryptoData {
+  coinId: string
+  symbol: string
+  data: HistoricalDataPoint[]
 } 
