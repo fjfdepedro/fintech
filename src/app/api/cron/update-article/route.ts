@@ -1,48 +1,52 @@
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { newsAPI } from '@/lib/api/news-service'
 import { articleAPI } from '@/lib/api/article-service'
 import prisma from '@/lib/prisma'
-import { headers } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 async function updateArticleData() {
-  console.log('Iniciando actualización de artículo...')
+  console.log('Starting article update...')
   
-  // 1. Obtener datos de las criptomonedas para el artículo
-  const cryptoData = await prisma.marketData.findMany({
-    where: {
-      type: 'CRYPTO'
-    },
-    orderBy: {
-      timestamp: 'desc'
-    },
-    distinct: ['symbol']
-  })
+  try {
+    // 1. Get crypto data for the article
+    const cryptoData = await prisma.marketData.findMany({
+      where: {
+        type: 'CRYPTO'
+      },
+      orderBy: {
+        timestamp: 'desc'
+      },
+      distinct: ['symbol']
+    })
 
-  // 2. Obtener noticias
-  const newsArticles = await newsAPI.getCryptoNews()
-  
-  // 3. Generar el artículo usando articleAPI
-  const content = await articleAPI.generateArticle(cryptoData, newsArticles)
-  
-  // 4. Guardar el artículo
-  const result = await prisma.article.create({
-    data: {
-      content: content.html,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  })
+    // 2. Get news
+    const newsArticles = await newsAPI.getCryptoNews()
+    
+    // 3. Generate article using articleAPI
+    const content = await articleAPI.generateArticle(cryptoData, newsArticles)
+    
+    // 4. Save the article
+    const result = await prisma.article.create({
+      data: {
+        content: content.html,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    })
 
-  console.log('Artículo actualizado:', result.id)
-  return result
+    console.log('Article updated:', result.id)
+    return result
+  } catch (error) {
+    console.error('Error generating article:', error)
+    throw error
+  }
 }
 
 export async function GET(request: Request) {
   try {
-    // Verificar si es una petición de Vercel Cron
+    // Verify if it's a Vercel Cron request
     const headersList = headers()
     const userAgent = headersList.get('user-agent')
     
@@ -56,7 +60,7 @@ export async function GET(request: Request) {
       articleId: result.id
     })
   } catch (error) {
-    console.error('Error en actualización automática de artículo:', error)
+    console.error('Error in automatic article update:', error)
     return NextResponse.json({ error: 'Article update failed' }, { status: 500 })
   }
 }
@@ -77,7 +81,7 @@ export async function POST(request: Request) {
       articleId: result.id
     })
   } catch (error) {
-    console.error('Error en actualización manual de artículo:', error)
+    console.error('Error in manual article update:', error)
     return NextResponse.json({ error: 'Article update failed' }, { status: 500 })
   }
 }

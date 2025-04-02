@@ -1,41 +1,41 @@
 import { NextResponse } from 'next/server'
-import { cryptoAPI } from '@/lib/api/crypto-service'
-import prisma from '@/lib/prisma'
 import { headers } from 'next/headers'
+import prisma from '@/lib/prisma'
+import { cryptoAPI } from '@/lib/api/crypto-service'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 async function updateCryptoData() {
-  console.log('Iniciando actualización de datos...')
+  console.log('Starting crypto data update...')
   
-  // 1. Obtener datos de CoinGecko
-  const apiData = await cryptoAPI.getTopCryptos(25)
-  console.log('Datos de CoinGecko recibidos:', apiData.length, 'registros')
-  
-  // 2. Guardar en base de datos
-  const results = await Promise.all(apiData.map(data => 
-    prisma.marketData.create({
-      data: {
-        symbol: data.symbol.toUpperCase(),
-        name: data.name || data.symbol,
-        price: Number(data.price),
-        change: Number(data.change),
-        volume: String(data.volume || '0'),
-        market_cap: Number(data.market_cap || 0),
+  try {
+    const data = await cryptoAPI.getMarketData()
+    
+    // Batch insert all records
+    const result = await prisma.marketData.createMany({
+      data: data.map(coin => ({
+        name: coin.name,
+        symbol: coin.symbol,
+        price: coin.price,
+        volume: coin.volume.toString(),
+        market_cap: coin.market_cap,
+        change: coin.price_change_24h,
         type: 'CRYPTO',
         timestamp: new Date()
-      }
+      }))
     })
-  ))
 
-  console.log('Actualización completada:', results.length, 'registros guardados')
-  return results
+    console.log('Crypto data updated:', result.count, 'records')
+    return result
+  } catch (error) {
+    console.error('Error updating crypto data:', error)
+    throw error
+  }
 }
 
 export async function GET(request: Request) {
   try {
-    // Verificar si es una petición de Vercel Cron
+    // Verify if it's a Vercel Cron request
     const headersList = headers()
     const userAgent = headersList.get('user-agent')
     
@@ -43,14 +43,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const results = await updateCryptoData()
+    const result = await updateCryptoData()
     return NextResponse.json({ 
       success: true,
-      count: results.length 
+      recordsUpdated: result.count
     })
   } catch (error) {
-    console.error('Error en actualización automática:', error)
-    return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+    console.error('Error in automatic crypto update:', error)
+    return NextResponse.json({ error: 'Crypto update failed' }, { status: 500 })
   }
 }
 
@@ -64,13 +64,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const results = await updateCryptoData()
+    const result = await updateCryptoData()
     return NextResponse.json({ 
       success: true,
-      count: results.length 
+      recordsUpdated: result.count
     })
   } catch (error) {
-    console.error('Error en actualización manual:', error)
-    return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+    console.error('Error in manual crypto update:', error)
+    return NextResponse.json({ error: 'Crypto update failed' }, { status: 500 })
   }
 }
