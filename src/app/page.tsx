@@ -3,6 +3,7 @@ import { PriceChart } from "@/components/charts/price-chart"
 import { MarketTable } from "@/components/widgets/market-table"
 import { format } from 'date-fns'
 import { CryptoArticle } from "../components/crypto-article"
+import { Header } from "@/components/header"
 import prisma from '@/lib/prisma'
 import Script from 'next/script'
 
@@ -133,26 +134,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className="container mx-auto p-6">
-        <div className="flex items-center mb-6">
-          <div className="flex items-center gap-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-8 w-8"
-              aria-hidden="true"
-            >
-              <path d="M12 2v20M2 12h20M7 17l5-5 5 5M7 7l5 5 5-5" />
-            </svg>
-            <h1 className="font-bold text-2xl">
-              Crypto Market Insights
-            </h1>
-          </div>
-        </div>
+        <Header />
 
         <main className="grid gap-4">
           <section className="grid gap-4 lg:grid-cols-8">
@@ -233,6 +215,46 @@ export default async function Home() {
                   />
                 </CardContent>
               </Card>
+
+              <Card className="bg-card">
+                <CardHeader className="py-3">
+                  <h2 className="text-lg font-semibold">Market Highlights</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Performers (24h)</h3>
+                      <div className="space-y-2">
+                        {cryptoData
+                          .sort((a, b) => b.change - a.change)
+                          .slice(0, 3)
+                          .map(coin => (
+                            <div key={coin.symbol} className="flex items-center justify-between">
+                              <span className="text-sm">{coin.symbol}</span>
+                              <span className="text-sm text-green-500">+{coin.change.toFixed(2)}%</span>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-2">Highest Volume (24h)</h3>
+                      <div className="space-y-2">
+                        {cryptoData
+                          .sort((a, b) => Number(b.volume) - Number(a.volume))
+                          .slice(0, 3)
+                          .map(coin => (
+                            <div key={coin.symbol} className="flex items-center justify-between">
+                              <span className="text-sm">{coin.symbol}</span>
+                              <span className="text-sm">${(Number(coin.volume) / 1e9).toFixed(2)}B</span>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </section>
 
@@ -285,10 +307,10 @@ export default async function Home() {
               <div>
                 <h3 className="font-semibold mb-3">Legal</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>Terms of Service</li>
-                  <li>Privacy Policy</li>
-                  <li>Cookie Policy</li>
-                  <li>GDPR Compliance</li>
+                  <li><a href="/terms" className="hover:underline">Terms of Service</a></li>
+                  <li><a href="/privacy" className="hover:underline">Privacy Policy</a></li>
+                  <li><a href="/cookies" className="hover:underline">Cookie Policy</a></li>
+                  <li><a href="/gdpr" className="hover:underline">GDPR Compliance</a></li>
                 </ul>
               </div>
               <div>
@@ -301,17 +323,15 @@ export default async function Home() {
               <div>
                 <h3 className="font-semibold mb-3">Data Sources</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>Market data provided by CoinGecko API</li>
                   <li>Last updated: {formattedLastUpdated}</li>
                   <li>All times shown in GMT</li>
                 </ul>
               </div>
               <div>
-                <h3 className="font-semibold mb-3">Contact</h3>
+                <h3 className="font-semibold mb-3">Resources</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>support@cryptomarket.com</li>
-                  <li>Report an issue</li>
-                  <li>API Documentation</li>
+                  <li><a href="/issues" className="hover:underline">Report an issue</a></li>
+                  <li><a href="/docs/api" className="hover:underline">API Documentation</a></li>
                 </ul>
               </div>
             </div>
