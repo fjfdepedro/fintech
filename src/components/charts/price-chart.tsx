@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { AreaChart } from "@tremor/react"
 import { format } from "date-fns"
 
@@ -55,11 +55,6 @@ export function PriceChart({
   if (validData.length === 0) {
     return (
       <Card className={`overflow-hidden ${className}`}>
-        <CardHeader className="p-4 bg-muted/50">
-          <CardTitle className="text-sm font-medium">
-            {title || `${symbol} Price Chart`}
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-6 text-center text-muted-foreground">
           No data available for this period
         </CardContent>
@@ -68,7 +63,7 @@ export function PriceChart({
   }
 
   const formattedData = validData.map(point => ({
-    date: format(new Date(point.date), 'HH:mm'),
+    date: format(new Date(point.date), 'MMM dd, yyyy HH:mm'),
     [symbol]: point.value
   }))
 
@@ -103,7 +98,7 @@ export function PriceChart({
   const chart = (
     <div style={{ height: `${height}px` }} className="relative">
       <AreaChart
-        className="h-full w-full [&_svg]:!overflow-visible"
+        className="h-full w-full [&_svg]:!overflow-visible [&_text]:text-xs [&_text]:font-normal"
         data={formattedData}
         index="date"
         categories={[symbol]}
@@ -147,11 +142,6 @@ export function PriceChart({
 
   return (
     <Card className={`overflow-hidden ${className}`}>
-      <CardHeader className="p-4 bg-muted/50">
-        <CardTitle className="text-sm font-medium">
-          {title}
-        </CardTitle>
-      </CardHeader>
       <CardContent className="p-0">
         {chart}
       </CardContent>

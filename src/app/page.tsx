@@ -277,11 +277,8 @@ export default async function Home() {
                             height={200}
                           />
                           <div className="p-4 text-sm text-muted-foreground border-t">
-                            <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'}</div>
-                            <div className="mt-1">Price: ${cryptoInfo?.price.toFixed(2) || '--'}</div>
-                            <time className="text-xs mt-1 block">
-                              {formattedTimestamp}
-                            </time>
+                            <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'} | Price: ${cryptoInfo?.price.toFixed(2) || '--'} | {formattedTimestamp}
+                            </div>
                           </div>
                         </CardContent>
                       </article>
