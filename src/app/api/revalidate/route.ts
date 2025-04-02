@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   try {
     const { path } = await request.json()
@@ -19,7 +21,11 @@ export async function POST(request: Request) {
     // Revalidar la ruta especificada
     revalidatePath(path)
 
-    return NextResponse.json({ revalidated: true, now: Date.now() })
+    return NextResponse.json({ 
+      revalidated: true, 
+      now: Date.now(),
+      path 
+    })
   } catch (error) {
     console.error('Error revalidating:', error)
     return NextResponse.json(

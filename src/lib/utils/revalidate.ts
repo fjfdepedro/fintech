@@ -4,10 +4,10 @@ export async function revalidatePath(path: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.CRON_SECRET}`
       },
       body: JSON.stringify({
-        path,
-        secret: process.env.CRON_SECRET,
+        path
       }),
     })
 
