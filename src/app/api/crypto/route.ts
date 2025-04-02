@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { revalidatePath } from '@/lib/utils/revalidate'
 
 // Add ISR configuration
 export const revalidate = 3600 // Revalidate every hour
@@ -16,7 +17,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(cryptoData, {
       headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60, must-revalidate',
+        'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
       }
     })
   } catch (error) {
@@ -34,9 +37,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const data = await request.json()
-  
   try {
+    const data = await request.json()
+    
     // Obtener el inicio y fin de la hora actual
     const now = new Date()
     const startOfHour = new Date(now.setMinutes(0, 0, 0))
@@ -73,6 +76,13 @@ export async function POST(request: Request) {
         market_cap: data.market_cap
       }
     })
+
+    // Revalidar las rutas relevantes después de crear un nuevo registro
+    await Promise.all([
+      revalidatePath('/'),
+      revalidatePath('/api/crypto'),
+      revalidatePath('/api/crypto/history')
+    ])
 
     return NextResponse.json(result)
   } catch (error) {

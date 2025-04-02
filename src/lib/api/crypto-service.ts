@@ -4,7 +4,7 @@ import axiosRetry from 'axios-retry'
 import { PrismaClient } from '@prisma/client'
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3'
-const COINGECKO_API_KEY = process.env.NEXT_PUBLIC_COINGECKO_API_KEY
+const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
 const prisma = new PrismaClient()
 
 // Configurar headers por defecto para todas las llamadas a CoinGecko

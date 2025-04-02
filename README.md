@@ -1,155 +1,165 @@
-# Fintech Dashboard
+# CryptoToday
 
 A comprehensive financial dashboard built with Next.js 14, TypeScript, and Prisma, featuring real-time cryptocurrency data, market analysis, and AI-powered insights.
 
 ## Features
 
-### Market Data
-- Real-time cryptocurrency price tracking
-- 24-hour price changes and volume data
-- Market cap information
-- Historical price charts (7-day view)
-- Top cryptocurrencies ranking table
+### Real-time Data & Auto-Updates
+- Hourly automatic updates of cryptocurrency data from CoinGecko API
+- AI-powered market analysis using QWen API
+- Incremental Static Regeneration (ISR) with smart caching
+- Automatic retry mechanism for failed updates
 
-### AI-Powered Analysis
-- Daily AI-generated cryptocurrency market analysis
-- Professional financial insights using Qwen AI
-- Automatic article generation based on latest market data
-- Cached articles to prevent redundant API calls
+### Technical Implementation
 
-### Portfolio Management
-- Create and manage multiple portfolios
-- Track your cryptocurrency holdings
-- Real-time portfolio value updates
-- Portfolio performance metrics
+#### 1. Automatic Revalidation (ISR)
+```typescript
+// In src/app/page.tsx and layout.tsx
+export const revalidate = 3600 // Hourly revalidation
+```
 
-### Watchlist
-- Create custom watchlists for different cryptocurrencies
-- Track multiple cryptocurrencies in real-time
-- Quick access to your favorite assets
+#### 2. Auto-Update System
+```typescript
+// Components and hooks working together
+AutoUpdater -> useAutoUpdate -> Update Actions -> Revalidation
+```
 
-### Technical Features
-- Server-side rendering with Next.js 14
-- Real-time updates with React Server Components
-- Type-safe database operations with Prisma
-- PostgreSQL database with Supabase
-- Rate limiting for API endpoints
-- Responsive design with Tailwind CSS
-- Modern UI components with Shadcn UI
+#### 3. Update Flow
+```typescript
+// Hourly checks for:
+- Cryptocurrency data updates
+- Market analysis generation
+- Cache revalidation
+```
 
-## Tech Stack
+#### 4. Error Handling & Reliability
+- Maximum 3 retry attempts
+- 5-minute intervals between retries
+- Comprehensive error logging
+- Automatic recovery mechanisms
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS, Shadcn UI
-- **Backend**: Next.js API Routes, Prisma
-- **Database**: PostgreSQL (Supabase)
-- **AI**: Qwen AI via OpenRouter API
-- **Authentication**: NextAuth.js
-- **Data Sources**: CoinGecko API
+### Cache Management
+```typescript
+// Optimized Vercel CDN Headers
+headers: {
+  'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60, must-revalidate',
+  'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60',
+  'Vercel-CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+}
+```
 
-## Getting Started
+## Setup & Configuration
 
-1. Clone the repository
-2. Install dependencies:
+### Environment Variables
 ```bash
+# Required environment variables
+COINGECKO_API_KEY=your-coingecko-api-key
+QWEN_API_KEY=your-qwen-api-key
+CRON_SECRET=your-secure-secret
+
+# Optional environment variables
+DATABASE_URL=your-database-url
+```
+
+### Installation
+```bash
+# Install dependencies
 npm install
-```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
-```
-Fill in the required environment variables:
-- Database URLs (Supabase)
-- API keys (CoinGecko, Qwen)
-- NextAuth configuration
+# Generate Prisma client
+npx prisma generate
 
-4. Set up the database:
-```bash
-npx prisma migrate dev
-```
-
-5. Run the development server:
-```bash
+# Run development server
 npm run dev
 ```
 
-## API Endpoints
+### Production Deployment
+```bash
+# Build the application
+npm run build
 
-### Market Data
-- `/api/crypto` - Get latest cryptocurrency data
-- `/api/crypto/history` - Get historical price data
+# Start production server
+npm run start
+```
 
-### Articles
-- `/api/articles` - Get or generate daily market analysis
+## API Integration
 
-### Portfolios
-- `/api/portfolios` - Manage user portfolios
-- `/api/watchlists` - Manage user watchlists
+### CoinGecko API
+- Real-time cryptocurrency data
+- Market prices and trends
+- Hourly updates with rate limiting
 
-## Database Schema
+### QWen API
+- AI-powered market analysis
+- Automated article generation
+- Natural language processing
 
-### Models
-- User
-- Portfolio
-- Watchlist
-- Symbol
-- MarketData
-- Article
-- ApiLimit
+## Security Measures
 
-## Rate Limiting
+### API Security
+```typescript
+// Server-side only environment variables
+- COINGECKO_API_KEY
+- QWEN_API_KEY
+- CRON_SECRET
 
-The application implements rate limiting for API endpoints to prevent abuse:
-- Default limit: 100 requests per minute
-- Configurable via environment variables
+// Authentication headers
+headers: {
+  'Authorization': `Bearer ${CRON_SECRET}`
+}
+```
+
+### Cache Revalidation Security
+- Secure token validation
+- Rate limiting
+- Error handling
+
+## Monitoring & Maintenance
+
+### Vercel Dashboard
+- Performance monitoring
+- Error tracking
+- Cache status
+- API rate limits
+
+### Update Verification
+```bash
+# Manual revalidation (if needed)
+curl -X POST 'https://your-domain.vercel.app/api/revalidate' \
+-H 'Authorization: Bearer your-CRON_SECRET' \
+-H 'Content-Type: application/json' \
+-d '{"path": "/"}'
+```
+
+## Architecture Overview
+
+### Data Flow
+```
+1. Hourly Trigger
+   └─> Auto-Update System
+       ├─> CoinGecko API
+       │   └─> Database Update
+       │       └─> Cache Revalidation
+       │
+       └─> QWen API
+           └─> Article Generation
+               └─> Cache Revalidation
+```
+
+### Error Recovery
+```
+Update Attempt
+└─> Success: Continue normal operation
+└─> Failure: Enter retry cycle
+    ├─> Wait 5 minutes
+    ├─> Maximum 3 retries
+    └─> Reset cycle after max attempts
+```
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+Feel free to submit issues and enhancement requests!
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## API Examples
-
-### OpenRouter API Call Example
-```bash
-curl https://openrouter.ai/api/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -d '{
-  "model": "qwen/qwq-32b:free",
-  "messages": [
-    {
-      "role": "user",
-      "content": "What is the meaning of life?"
-    }
-  ]
-}'
-```
-
-### CoinGecko API Example
-```bash
-curl -X GET "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false" \
-  -H "accept: application/json"
-```
+This project is licensed under the MIT License - see the LICENSE file for details.

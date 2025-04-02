@@ -7,6 +7,9 @@ import { AutoUpdater } from '@/components/auto-updater'
 
 const inter = Inter({ subsets: ["latin"] });
 
+// Add ISR configuration
+export const revalidate = 3600 // Revalidate every hour
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.cryptotoday.click'),
   title: {
