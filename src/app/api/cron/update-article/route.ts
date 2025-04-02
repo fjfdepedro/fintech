@@ -63,11 +63,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // Validate cron secret from query parameters
-    const { searchParams } = new URL(request.url)
-    const cronSecret = searchParams.get('secret')
+    // Validate authorization header
+    const headersList = headers()
+    const authHeader = headersList.get('Authorization')
     
-    if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
