@@ -29,7 +29,17 @@ const chartColors = [
   "cyan",
   "amber",
   "fuchsia",
-  "teal"
+  "teal",
+  "lime",
+  "pink",
+  "purple",
+  "sky",
+  "yellow",
+  "red",
+  "green",
+  "stone",
+  "zinc",
+  "neutral"
 ]
 
 // Función para obtener un color basado en el símbolo
@@ -82,49 +92,41 @@ export function PriceChart({
   const minValue = Math.min(...data.map(d => d.value)) * 0.995;
   const maxValue = Math.max(...data.map(d => d.value)) * 1.005;
 
-  const chart = (
-    <div style={{ height: `${height}px` }} className="relative">
-      <AreaChart
-        className="h-full w-full [&_svg]:!overflow-visible
-          [&_path[fill]]:!opacity-40 
-          [&_path[stroke]]:!stroke-[2] 
-          [&_.tremor-AreaChart-axisLine]:hidden 
-          [&_text]:!text-[10px]
-          [&_text]:!text-muted-foreground/60
-          [&_.tremor-AreaChart-line]:!hidden"
-        data={formattedData}
-        index="date"
-        categories={[symbol]}
-        colors={[color]}
-        valueFormatter={(value) => `$${Number(value).toFixed(2)}`}
-        showYAxis={true}
-        showXAxis={true}
-        showLegend={false}
-        showGridLines={false}
-        showTooltip={true}
-        customTooltip={customTooltip}
-        minValue={minValue}
-        maxValue={maxValue}
-        startEndOnly={true}
-        autoMinValue={false}
-        curveType="natural"
-        yAxisWidth={42}
-        showGradient={false}
-      />
-    </div>
-  )
-
-  if (!title) return chart
-
   return (
-    <Card className={`overflow-hidden ${className}`}>
-      <CardHeader className="p-4 bg-muted/50">
-        <CardTitle className="text-sm font-medium">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {chart}
+    <Card className={className}>
+      {title && (
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        </CardHeader>
+      )}
+      <CardContent>
+        <div style={{ height: `${height}px` }} className="relative">
+          <AreaChart
+            className="h-full w-full [&_svg]:!overflow-visible
+              [&_path[fill]]:!opacity-40 
+              [&_path[stroke]]:!stroke-[2] 
+              [&_.tremor-AreaChart-axisLine]:hidden 
+              [&_text]:!text-[10px]
+              [&_text]:!text-muted-foreground/60
+              [&_.tremor-AreaChart-line]:!hidden"
+            data={formattedData}
+            index="date"
+            categories={[symbol]}
+            colors={[color]}
+            valueFormatter={(value) => `$${Number(value).toFixed(2)}`}
+            showYAxis={showAxes}
+            showXAxis={showAxes}
+            showLegend={true}
+            showGridLines={true}
+            minValue={minValue}
+            maxValue={maxValue}
+            customTooltip={customTooltip}
+            yAxisWidth={60}
+            startEndOnly={true}
+            showAnimation={true}
+            animationDuration={1000}
+          />
+        </div>
       </CardContent>
     </Card>
   )
