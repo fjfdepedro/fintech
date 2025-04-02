@@ -48,8 +48,8 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
             <TableHead className="text-left">Name</TableHead>
             <TableHead className="text-right">Price</TableHead>
             <TableHead className="text-right">24h Change</TableHead>
-            <TableHead className="text-right">Volume</TableHead>
-            <TableHead className="text-right">Last Update</TableHead>
+            <TableHead className="text-right pr-6">Volume</TableHead>
+            <TableHead className="text-right whitespace-nowrap min-w-[200px]">Last Update</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,8 +77,8 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
                     {item.change > 0 ? '+' : ''}{item.change.toFixed(2)}%
                   </TableCell>
                   <TableCell className="text-right">${(Number(item.volume) / 1e9).toFixed(2)}B</TableCell>
-                  <TableCell className="text-right">
-                    {format(new Date(item.timestamp), 'MM/dd/yyyy HH:mm')}
+                  <TableCell className="text-right whitespace-nowrap pl-6">
+                    {format(new Date(new Date(item.timestamp).toUTCString()), 'MMM dd, yyyy HH:mm')} GMT
                   </TableCell>
                 </TableRow>
               );

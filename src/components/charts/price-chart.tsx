@@ -68,7 +68,7 @@ export function PriceChart({
           <div className={`flex w-1 flex-col bg-${color}-500 rounded`} />
           <div className="space-y-1">
             <p className="text-tremor-content text-xs">
-              {format(new Date(originalData?.date || data[0].date), 'MMM dd, HH:mm')}
+              {format(new Date(originalData?.date || data[0].date), 'MMM dd, yyyy HH:mm')} GMT
             </p>
             <p className="font-medium text-tremor-content-emphasis">
               ${Number(payload[0].value).toFixed(2)}

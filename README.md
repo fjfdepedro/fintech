@@ -48,6 +48,21 @@ headers: {
 }
 ```
 
+### Update System Details
+- **Cache Duration**: 1 hour (3600 seconds) for all routes
+- **Update Cycle**:
+  - Cryptocurrency data updates every hour
+  - New article generation after crypto updates
+  - Automatic cache revalidation after updates
+- **Protected Routes**:
+  - `/api/cron/update-crypto`
+  - `/api/cron/update-article`
+  - `/api/revalidate`
+- **Cache Invalidation**:
+  - Automatic after successful updates
+  - Manual revalidation available via API
+  - Supports multiple paths revalidation
+
 ## Setup & Configuration
 
 ### Environment Variables

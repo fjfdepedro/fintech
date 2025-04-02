@@ -9,10 +9,20 @@ import Script from 'next/script'
 export const revalidate = 3600 // Revalidate every hour
 
 async function getCryptoData() {
-  const cryptoData = await prisma.marketData.findMany({
-    orderBy: { timestamp: 'desc' },
-    take: 25,
+  const symbols = await prisma.marketData.findMany({
+    select: { symbol: true },
+    distinct: ['symbol']
   })
+
+  const cryptoData = await prisma.marketData.findMany({
+    where: {
+      symbol: { in: symbols.map(s => s.symbol) }
+    },
+    orderBy: { timestamp: 'desc' },
+    distinct: ['symbol'],
+    take: 25
+  })
+
   return cryptoData
 }
 
@@ -43,17 +53,7 @@ async function getHistoricalData(symbol: string) {
 }
 
 async function getLatestArticle() {
-  const now = new Date()
-  const startOfHour = new Date(now.setMinutes(0, 0, 0))
-  const endOfHour = new Date(now.setTime(now.getTime() + 60 * 60 * 1000 - 1))
-
   const article = await prisma.article.findFirst({
-    where: {
-      createdAt: {
-        gte: startOfHour,
-        lte: endOfHour
-      }
-    },
     orderBy: {
       createdAt: 'desc'
     }
@@ -113,9 +113,9 @@ export default async function Home() {
     }
   }
 
-  // Ensure consistent date formatting
+  // Ensure consistent date formatting with correct timezone
   const formattedLastUpdated = lastUpdated 
-    ? format(new Date(lastUpdated), 'MMMM d, yyyy') + ' at ' + format(new Date(lastUpdated), 'HH:mm') + ' GMT'
+    ? format(new Date(new Date(lastUpdated).toUTCString()), "'Last Update:' MMM d, yyyy 'at' HH:mm 'GMT'")
     : '--'
 
   // Sort historical data consistently
@@ -133,65 +133,89 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className="container mx-auto p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-8 w-8"
-            aria-hidden="true"
-          >
-            <path d="M12 2v20M2 12h20M7 17l5-5 5 5M7 7l5 5 5-5" />
-          </svg>
-          <h1 className="font-bold text-2xl">
-            Crypto Market Insights
-          </h1>
+        <div className="flex items-center mb-6">
+          <div className="flex items-center gap-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-8 w-8"
+              aria-hidden="true"
+            >
+              <path d="M12 2v20M2 12h20M7 17l5-5 5 5M7 7l5 5 5-5" />
+            </svg>
+            <h1 className="font-bold text-2xl">
+              Crypto Market Insights
+            </h1>
+          </div>
         </div>
 
-        <main className="grid gap-6">
-          <section className="grid gap-6 lg:grid-cols-5">
-            <article className="lg:col-span-3">
+        <main className="grid gap-4">
+          <section className="grid gap-4 lg:grid-cols-8">
+            <article className="lg:col-span-4">
               <Card className="h-full">
-                <CardHeader>
-                  <h2 className="text-2xl font-bold">Daily Crypto Analysis</h2>
-                  <time className="text-sm text-muted-foreground">
-                    Last Update: {formattedLastUpdated}
-                  </time>
+                <CardHeader className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">Daily Crypto Analysis</h2>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-slate dark:prose-invert max-w-none">
-                    <div className="
-                      prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-2
-                      prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-10 prose-h2:mb-6 prose-h2:border-b prose-h2:pb-2
-                      prose-h3:text-xl prose-h3:font-medium prose-h3:mt-8 prose-h3:mb-4
-                      prose-h4:text-lg prose-h4:font-medium prose-h4:mt-6 prose-h4:mb-3
-                      prose-p:my-4 prose-p:leading-relaxed
-                      prose-strong:font-semibold
-                      prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
-                      prose-li:my-2
-                      prose-hr:my-8 prose-hr:border-t prose-hr:border-muted/60
-                      [&_hr+h3]:mt-8 [&_hr+p]:mt-8 [&_p+hr]:mt-8 [&_ul+hr]:mt-8 [&_table+hr]:mt-8
-                      [&_.date]:text-lg [&_.date]:font-medium [&_.date]:mb-6 [&_.date]:text-foreground/80
-                      [&_.time-value]:text-muted-foreground
-                      [&_.subtitle]:text-base [&_.subtitle]:text-muted-foreground [&_.subtitle]:mb-8
-                      [&_.section-number]:font-bold [&_.section-number]:mr-2
-                      [&_.performance]:font-medium [&_.performance]:text-muted-foreground
-                      [&_.category-title]:text-lg [&_.category-title]:font-semibold [&_.category-title]:mt-6 [&_.category-title]:mb-2
-                    ">
-                      <CryptoArticle content={article?.content || 'No article available at this time.'} />
-                    </div>
+                    <CryptoArticle content={article?.content || 'No article available at this time.'} />
                   </div>
                 </CardContent>
               </Card>
             </article>
 
-            <section className="lg:col-span-2">
+            <section className="lg:col-span-4 flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-4">
+                <Card className="bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
+                    <CardTitle className="text-sm font-medium">Total Market Cap</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3">
+                    <div className="text-2xl font-bold">
+                      ${(cryptoData.reduce((acc, coin) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Total value of all cryptocurrencies at current prices
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
+                    <CardTitle className="text-sm font-medium">24h Volume</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3">
+                    <div className="text-2xl font-bold">
+                      ${(cryptoData.reduce((acc, coin) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Amount traded across all pairs in the last 24 hours
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
+                    <CardTitle className="text-sm font-medium">Active Cryptocurrencies</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3">
+                    <div className="text-2xl font-bold">
+                      {cryptoData.filter(coin => coin.price > 0).length}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Number of cryptocurrencies currently being tracked
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
               <Card className="h-full">
-                <CardHeader>
+                <CardHeader className="py-3">
                   <h2 className="text-2xl font-bold">Top Cryptocurrencies</h2>
                 </CardHeader>
                 <CardContent>
@@ -254,6 +278,51 @@ export default async function Home() {
             </Card>
           </section>
         </main>
+
+        <footer className="mt-12 py-6 border-t border-border">
+          <div className="container mx-auto px-4">
+            <div className="grid gap-8 md:grid-cols-4">
+              <div>
+                <h3 className="font-semibold mb-3">Legal</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>Terms of Service</li>
+                  <li>Privacy Policy</li>
+                  <li>Cookie Policy</li>
+                  <li>GDPR Compliance</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-3">Disclaimer</h3>
+                <p className="text-sm text-muted-foreground">
+                  The information provided on this site is for informational purposes only and should not be considered financial advice. 
+                  Cryptocurrency investments are volatile and high-risk. Always conduct your own research before making any investment decisions.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-3">Data Sources</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>Market data provided by CoinGecko API</li>
+                  <li>Last updated: {formattedLastUpdated}</li>
+                  <li>All times shown in GMT</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-3">Contact</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li>support@cryptomarket.com</li>
+                  <li>Report an issue</li>
+                  <li>API Documentation</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-border">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+                <p>© {new Date().getFullYear()} Crypto Market Insights. All rights reserved.</p>
+                <p>Made with ❤️ for the crypto community</p>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   )
