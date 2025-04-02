@@ -295,7 +295,7 @@ export default async function Home() {
 
         <footer className="mt-12 py-6 border-t border-border">
           <div className="container mx-auto px-4">
-            <div className="grid gap-8 md:grid-cols-4">
+            <div className="grid gap-8 md:grid-cols-3">
               <div>
                 <h3 className="font-semibold mb-3">Legal</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
@@ -317,13 +317,6 @@ export default async function Home() {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>Last updated: {formattedLastUpdated}</li>
                   <li>All times shown in GMT</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-3">Resources</h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><a href="/issues" className="hover:underline">Report an issue</a></li>
-                  <li><a href="/docs/api" className="hover:underline">API Documentation</a></li>
                 </ul>
               </div>
             </div>
