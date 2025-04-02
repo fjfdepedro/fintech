@@ -74,17 +74,19 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'your-google-site-verification', // Add your Google Search Console verification code
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' }
-  ],
+  }
 };
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export const themeColor = [
+  { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+  { media: '(prefers-color-scheme: dark)', color: '#000000' }
+];
 
 export default function RootLayout({
   children,
