@@ -47,7 +47,8 @@ const publicApiRoutes = [
 // List of cron job routes that require CRON_SECRET
 const cronRoutes = [
   '/api/cron/update-crypto',
-  '/api/cron/update-article'
+  '/api/cron/update-article',
+  '/api/revalidate'
 ]
 
 export async function middleware(request: NextRequest) {
