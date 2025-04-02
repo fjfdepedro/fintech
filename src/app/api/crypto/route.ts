@@ -8,7 +8,7 @@ export const revalidate = 3600 // Revalidate every hour
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '25')
+    const limit = parseInt(searchParams.get('limit') || '50')
 
     const cryptoData = await prisma.marketData.findMany({
       orderBy: { timestamp: 'desc' },

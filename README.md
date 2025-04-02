@@ -83,7 +83,7 @@ const latestData = await prisma.$queryRaw<CryptoData[]>`
   SELECT * FROM RankedData 
   WHERE rn = 1
   ORDER BY market_cap DESC
-  LIMIT 25
+  LIMIT 50
 `
 ```
 

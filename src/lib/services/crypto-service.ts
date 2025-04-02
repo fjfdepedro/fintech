@@ -26,7 +26,7 @@ export async function checkAndUpdateCryptoData() {
       try {
         // 2. Fetch new data from API
         console.log('Fetching new crypto data from API...')
-        const data = await cryptoAPI.getTopCryptos(25)
+        const data = await cryptoAPI.getTopCryptos(50)
         
         // 3. Save to database
         const result = await prisma.marketData.createMany({
@@ -65,16 +65,20 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
   try {
     // Get latest data for each symbol
     const latestData = await prisma.$queryRaw<CryptoData[]>`
-      WITH RankedData AS (
-        SELECT *,
-          ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY timestamp DESC) as rn
+      WITH LatestTimestamps AS (
+        SELECT symbol, MAX(timestamp) as latest_timestamp
         FROM "MarketData"
         WHERE type = 'CRYPTO'
+        GROUP BY symbol
       )
-      SELECT * FROM RankedData 
-      WHERE rn = 1
-      ORDER BY market_cap DESC
-      LIMIT 25
+      SELECT m.*
+      FROM "MarketData" m
+      INNER JOIN LatestTimestamps lt 
+        ON m.symbol = lt.symbol 
+        AND m.timestamp = lt.latest_timestamp
+      WHERE m.type = 'CRYPTO'
+      ORDER BY m.market_cap DESC
+      LIMIT 50
     `
 
     return latestData

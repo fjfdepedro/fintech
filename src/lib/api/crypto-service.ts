@@ -24,33 +24,45 @@ axiosRetry(coingeckoAxios, {
 
 // Lista de criptomonedas específicas que queremos seguir
 const specificCoins = [
-  // Criptomonedas originales
-  'bitcoin', 'ethereum', 'solana', 'binancecoin', 'ripple',
-  'tether', 'cardano', 'dogecoin', 'sui', 'arbitrum',
-  'algorand', 'floki', 'toncoin',
-  'polkadot', 'polygon', 'avalanche-2', 'chainlink', 'uniswap',
-  'stellar', 'cosmos', 'optimism', 'near', 'aptos',
-  'injective-protocol', 'sei-network'
+  // Top 25 actuales
+  'bitcoin', 'ethereum', 'binancecoin', 'ripple', 'tether',
+  'usd-coin', 'cardano', 'dogecoin', 'polkadot', 'solana',
+  'avalanche-2', 'chainlink', 'uniswap', 'stellar', 'cosmos',
+  'near', 'aptos', 'sui', 'the-open-network', 'tron',
+  'wrapped-bitcoin', 'wrapped-steth', 'leo-token', 'lido-staked-ether',
+  'shiba-inu',
+  
+  // Añadidas hasta 50
+  'polygon', 'monero', 'bitcoin-cash', 'litecoin', 'dai',
+  'ethereum-classic', 'hedera-hashgraph', 'filecoin', 'internet-computer',
+  'arbitrum', 'optimism', 'cronos', 'algorand', 'vechain',
+  'aave', 'eos', 'tezos', 'quant-network', 'elrond-erd-2',
+  'pax-gold', 'theta-token', 'fantom', 'thorchain', 'pancakeswap-token',
+  'curve-dao-token'
 ]
 
 export const cryptoAPI = {
-  async getTopCryptos(limit: number = 25): Promise<MarketData[]> {
+  async getTopCryptos(limit: number = 50): Promise<MarketData[]> {
     try {
       console.log('Llamando a CoinGecko API...')
       
-      const response = await coingeckoAxios.get('/coins/markets', {
-        params: {
-          vs_currency: 'usd',
-          ids: specificCoins.join(','),
-          order: 'market_cap_desc',
-          per_page: limit,
-          sparkline: false
+      const response = await fetch(
+        `${COINGECKO_API_URL}/coins/markets?vs_currency=usd&ids=${specificCoins.join(',')}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false&price_change_percentage=24h&locale=en`,
+        {
+          headers: {
+            'x-cg-pro-api-key': process.env.COINGECKO_API_KEY || '',
+          },
         }
-      })
+      )
       
-      console.log('Respuesta de CoinGecko recibida:', response.data.length, 'registros')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       
-      return response.data.map((coin: any) => ({
+      const data = await response.json()
+      console.log('Respuesta de CoinGecko recibida:', data.length, 'registros')
+      
+      return data.map((coin: any) => ({
         symbol: coin.symbol.toUpperCase(),
         name: coin.name,
         price: coin.current_price,
@@ -149,6 +161,6 @@ export const cryptoAPI = {
   }
 }
 
-cryptoAPI.getTopCryptos(25)
+cryptoAPI.getTopCryptos(50)
   .then(data => data)
   .catch(error => console.error('Error:', error))

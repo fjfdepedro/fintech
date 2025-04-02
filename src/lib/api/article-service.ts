@@ -9,11 +9,14 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
 // Agrupar criptomonedas por categoría
 const CRYPTO_CATEGORIES = {
-  'Layer 1': ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'NEAR', 'ATOM', 'TON'],
-  'DeFi': ['UNI', 'LINK'],
-  'Stablecoins': ['USDT'],
-  'Meme Coins': ['DOGE', 'FLOKI'],
-  'Emerging Ecosystems': ['ARB', 'OP', 'SUI', 'APT', 'INJ', 'SEI']
+  'Layer 1': ['BTC', 'ETH', 'SOL', 'ADA', 'DOT', 'AVAX', 'NEAR', 'ATOM', 'TON', 'TRX', 'XTZ', 'EGLD', 'ICP', 'FIL', 'HBAR', 'ETC', 'LTC', 'BCH'],
+  'DeFi': ['UNI', 'LINK', 'AAVE', 'CRV', 'CAKE'],
+  'Stablecoins': ['USDT', 'USDC', 'DAI', 'PAXG'],
+  'Meme Coins': ['DOGE', 'SHIB', 'FLOKI'],
+  'Layer 2': ['ARB', 'OP', 'MATIC', 'CRO'],
+  'Emerging Ecosystems': ['SUI', 'APT', 'INJ', 'SEI', 'ALGO', 'VET', 'QNT', 'THETA', 'FTM', 'RUNE'],
+  'Wrapped Assets': ['WBTC', 'WSTETH'],
+  'Exchange Tokens': ['BNB', 'LEO']
 }
 
 export interface ArticleResponse {
