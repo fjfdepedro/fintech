@@ -4,6 +4,9 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import GoogleAnalytics from '@/components/google-analytics'
 import { AutoUpdater } from '@/components/auto-updater'
+import { CookieConsent } from '@/components/ui/cookie-consent'
+import { cn } from "@/lib/utils";
+import { fontSans } from "@/styles/fonts";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -105,6 +108,7 @@ export default function RootLayout({
         >
           <AutoUpdater />
           {children}
+          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>
