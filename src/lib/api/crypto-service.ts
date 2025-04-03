@@ -50,7 +50,7 @@ export const cryptoAPI = {
         `${COINGECKO_API_URL}/coins/markets?vs_currency=usd&ids=${specificCoins.join(',')}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false&price_change_percentage=24h&locale=en`,
         {
           headers: {
-            'x-cg-pro-api-key': process.env.COINGECKO_API_KEY || '',
+            'x-cg-demo-api-key': COINGECKO_API_KEY || '',
           },
         }
       )
