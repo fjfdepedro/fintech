@@ -27,29 +27,30 @@ export function ImageGallery() {
   const [selectedImage, setSelectedImage] = useState(0)
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="w-full max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6">
         {/* Main Image */}
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg">
+        <div className="relative aspect-[4/3] rounded-lg md:rounded-xl overflow-hidden shadow-lg">
           <Image
             src={images[selectedImage].src}
             alt={images[selectedImage].alt}
             fill
             className="object-cover transition-transform duration-300 hover:scale-105"
             priority
+            sizes="(max-width: 768px) 90vw, 45vw"
           />
         </div>
 
         {/* Thumbnail Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2 md:gap-4">
           {images.map((image, index) => (
             <button
               key={image.src}
               onClick={() => setSelectedImage(index)}
               className={cn(
-                'relative aspect-[4/3] rounded-lg overflow-hidden transition-all duration-300',
+                'relative aspect-[4/3] rounded-md md:rounded-lg overflow-hidden transition-all duration-300',
                 selectedImage === index
-                  ? 'ring-2 ring-primary ring-offset-2'
+                  ? 'ring-1 md:ring-2 ring-primary ring-offset-1 md:ring-offset-2'
                   : 'hover:opacity-90'
               )}
             >
@@ -58,6 +59,7 @@ export function ImageGallery() {
                 alt={image.alt}
                 fill
                 className="object-cover"
+                sizes="(max-width: 768px) 45vw, 22vw"
               />
             </button>
           ))}
