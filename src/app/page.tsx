@@ -131,10 +131,10 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-3 sm:px-6">
+        <div className="container mx-auto px-3 sm:px-6 pt-6 sm:pt-8">
           <Header />
           
-          <nav className="sticky top-4 z-50 mx-auto max-w-fit rounded-full bg-background/95 px-3 sm:px-8 py-2 sm:py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60 border">
+          <nav className="sticky top-4 z-50 mx-auto max-w-fit rounded-full bg-background/95 px-3 sm:px-8 py-2 sm:py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60 border mt-6 sm:mt-8">
             <ul className="flex items-center gap-2 sm:gap-8 text-xs sm:text-sm">
               <li>
                 <a 
