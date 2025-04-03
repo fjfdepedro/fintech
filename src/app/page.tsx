@@ -9,6 +9,7 @@ import prisma from '@/lib/prisma'
 import Script from 'next/script'
 import { CryptoData, HistoricalDataPoint, HistoricalCryptoData } from "@/types/crypto"
 import { formatDate, isValidPastDate } from "@/lib/utils/date"
+import { ImageGallery } from '@/components/ui/image-gallery'
 
 export const revalidate = 3600 // Revalidate every hour
 
@@ -131,9 +132,42 @@ export default async function Home() {
       />
       <div className="container mx-auto p-6">
         <Header />
+        
+        <nav className="sticky top-4 z-50 mx-auto max-w-fit rounded-full bg-background/95 px-8 py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60 border">
+          <ul className="flex items-center gap-8">
+            <li>
+              <a 
+                href="#daily-crypto-analysis" 
+                className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+              >
+                Daily Crypto Analysis
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#top-cryptocurrencies" 
+                className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+              >
+                Top Cryptocurrencies
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#cryptocurrency-price-charts" 
+                className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+              >
+                Cryptocurrency Price Charts
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <section className="my-12">
+          <ImageGallery />
+        </section>
 
         <main className="grid gap-4">
-          <section className="grid gap-4 lg:grid-cols-8">
+          <section id="daily-crypto-analysis" className="grid gap-4 lg:grid-cols-8 scroll-mt-24">
             <article className="lg:col-span-4">
               <Card className="h-full">
                 <CardHeader className="flex flex-col gap-1">
@@ -150,49 +184,35 @@ export default async function Home() {
             </article>
 
             <section className="lg:col-span-4 flex flex-col gap-4">
-              <div className="grid grid-cols-3 gap-4">
-                <Card className="bg-card">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
-                    <CardTitle className="text-sm font-medium">Total Market Cap</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-3">
-                    <div className="text-2xl font-bold">
-                      ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Total value of all cryptocurrencies at current prices
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
-                    <CardTitle className="text-sm font-medium">24h Volume</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-3">
-                    <div className="text-2xl font-bold">
-                      ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Amount traded across all pairs in the last 24 hours
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
-                    <CardTitle className="text-sm font-medium">Active Cryptocurrencies</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-3">
-                    <div className="text-2xl font-bold">
-                      {cryptoData.filter((coin: CryptoData) => coin.price > 0).length}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Number of cryptocurrencies currently being tracked
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
               <Card className="h-full">
+                <CardHeader className="py-3">
+                  <h2 className="text-2xl font-bold">Market Statistics</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-muted-foreground">Total Market Cap</h3>
+                      <p className="text-2xl font-bold">
+                        ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-muted-foreground">24h Volume</h3>
+                      <p className="text-2xl font-bold">
+                        ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-muted-foreground">Active Cryptocurrencies</h3>
+                      <p className="text-2xl font-bold">
+                        {cryptoData.filter((coin: CryptoData) => coin.price > 0).length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card id="top-cryptocurrencies" className="h-full scroll-mt-24">
                 <CardHeader className="py-3">
                   <h2 className="text-2xl font-bold">Top Cryptocurrencies</h2>
                 </CardHeader>
@@ -254,7 +274,7 @@ export default async function Home() {
             </section>
           </section>
 
-          <section>
+          <section id="cryptocurrency-price-charts" className="scroll-mt-24">
             <Card>
               <CardHeader>
                 <h2 className="text-2xl font-bold">Cryptocurrency Price Charts</h2>
