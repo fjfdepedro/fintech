@@ -131,15 +131,15 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-3 sm:px-6 pt-6 sm:pt-8">
+        <div className="container mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
           <Header />
           
-          <nav className="sticky top-4 z-50 mx-auto max-w-fit rounded-full bg-background/95 px-3 sm:px-8 py-2 sm:py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60 border mt-6 sm:mt-8">
-            <ul className="flex items-center gap-2 sm:gap-8 text-xs sm:text-sm">
+          <nav className="sticky top-4 z-50 mx-auto max-w-fit rounded-full bg-background/95 px-4 sm:px-8 py-3 sm:py-4 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/60 border mt-6 sm:mt-8">
+            <ul className="flex items-center gap-4 sm:gap-8">
               <li>
                 <a 
                   href="#daily-crypto-analysis" 
-                  className="relative text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                  className="relative text-sm sm:text-base font-medium text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 >
                   Daily Analysis
                 </a>
@@ -147,7 +147,7 @@ export default async function Home() {
               <li>
                 <a 
                   href="#top-cryptocurrencies" 
-                  className="relative text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                  className="relative text-sm sm:text-base font-medium text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 >
                   Top Cryptos
                 </a>
@@ -155,7 +155,7 @@ export default async function Home() {
               <li>
                 <a 
                   href="#cryptocurrency-price-charts" 
-                  className="relative text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+                  className="relative text-sm sm:text-base font-medium text-muted-foreground transition-colors hover:text-primary after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                 >
                   Price Charts
                 </a>
@@ -163,160 +163,164 @@ export default async function Home() {
             </ul>
           </nav>
 
-          <section className="my-6 md:my-12">
-            <ImageGallery />
-          </section>
+          <div className="w-[95%] md:w-full mx-auto">
+            <section className="my-6 md:my-12">
+              <ImageGallery />
+            </section>
 
-          <main className="grid gap-6">
-            <section id="daily-crypto-analysis" className="grid gap-6 lg:grid-cols-8 scroll-mt-24">
-              <article className="lg:col-span-4">
-                <Card className="h-full">
-                  <CardHeader className="flex flex-col gap-2 p-6">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl md:text-2xl font-bold">Daily Crypto Analysis</h2>
-                    </div>
-                    <time className="text-sm text-muted-foreground">
-                      Last Update: {article?.createdAt ? formatDate(article.createdAt) : '--'}
-                    </time>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="prose prose-sm md:prose-base prose-slate dark:prose-invert max-w-none">
-                      <CryptoArticle content={article?.content || 'No article available at this time.'} />
-                    </div>
-                  </CardContent>
-                </Card>
-              </article>
+            <main className="grid gap-6">
+              <section id="daily-crypto-analysis" className="grid gap-6 lg:grid-cols-8 scroll-mt-24">
+                <article className="lg:col-span-4 w-full">
+                  <Card className="h-full w-[95%] md:w-full mx-auto">
+                    <CardHeader className="flex flex-col gap-1.5 sm:gap-2 p-4 sm:p-6">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">Daily Crypto Analysis</h2>
+                      </div>
+                      <time className="text-xs sm:text-sm text-muted-foreground">
+                        Last Update: {article?.createdAt ? formatDate(article.createdAt) : '--'}
+                      </time>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6 overflow-x-hidden">
+                      <div className="prose prose-xs sm:prose-sm lg:prose-base prose-slate dark:prose-invert max-w-none">
+                        <CryptoArticle content={article?.content || 'No article available at this time.'} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </article>
 
-              <section className="lg:col-span-4 flex flex-col gap-6">
-                <Card className="h-full">
+                <section className="lg:col-span-4 flex flex-col gap-4 sm:gap-6 w-full">
+                  <Card className="h-full w-[95%] md:w-full mx-auto">
+                    <CardHeader className="p-4 sm:p-6">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">Market Statistics</h2>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6 overflow-x-auto">
+                      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-w-[300px]">
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-muted-foreground">Total Market Cap</h3>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-muted-foreground">24h Volume</h3>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-muted-foreground">Active Cryptocurrencies</h3>
+                          <p className="text-xl sm:text-2xl font-bold">
+                            {cryptoData.filter((coin: CryptoData) => coin.price > 0).length}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card id="top-cryptocurrencies" className="h-full scroll-mt-24 w-[95%] md:w-full mx-auto">
+                    <CardHeader className="p-4 sm:p-6">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight">Top Cryptocurrencies</h2>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6 overflow-x-auto">
+                      <div className="min-w-[300px]">
+                        <MarketTable 
+                          data={(cryptoData || [])
+                            .map((item: CryptoData) => ({
+                              ...item,
+                              name: item.name || 'Unknown',
+                              volume: item.volume || '0'
+                            }))
+                            .sort((a: CryptoData, b: CryptoData) => a.name.localeCompare(b.name))
+                          }
+                          loading={false}
+                          type="crypto"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-card w-[95%] md:w-full mx-auto">
+                    <CardHeader className="p-4 sm:p-6">
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight">Market Highlights</h2>
+                    </CardHeader>
+                    <CardContent className="p-4 sm:p-6 overflow-x-auto">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-[300px]">
+                        <div>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Performers (24h)</h3>
+                          <div className="space-y-2">
+                            {cryptoData
+                              .sort((a: CryptoData, b: CryptoData) => b.change - a.change)
+                              .slice(0, 3)
+                              .map((coin: CryptoData) => (
+                                <div key={coin.symbol} className="flex items-center justify-between">
+                                  <span className="text-sm">{coin.symbol}</span>
+                                  <span className="text-sm text-green-500">+{coin.change.toFixed(2)}%</span>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-muted-foreground mb-2">Highest Volume (24h)</h3>
+                          <div className="space-y-2">
+                            {cryptoData
+                              .sort((a: CryptoData, b: CryptoData) => Number(b.volume) - Number(a.volume))
+                              .slice(0, 3)
+                              .map((coin: CryptoData) => (
+                                <div key={coin.symbol} className="flex items-center justify-between">
+                                  <span className="text-sm">{coin.symbol}</span>
+                                  <span className="text-sm">${(Number(coin.volume) / 1e9).toFixed(2)}B</span>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </section>
+              </section>
+
+              <section id="cryptocurrency-price-charts" className="scroll-mt-24">
+                <Card className="w-[95%] md:w-full mx-auto">
                   <CardHeader className="p-6">
-                    <h2 className="text-xl md:text-2xl font-bold">Market Statistics</h2>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-muted-foreground">Total Market Cap</h3>
-                        <p className="text-2xl font-bold">
-                          ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + (coin.market_cap || 0), 0) / 1e12).toFixed(2)}T
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-muted-foreground">24h Volume</h3>
-                        <p className="text-2xl font-bold">
-                          ${(cryptoData.reduce((acc: number, coin: CryptoData) => acc + Number(coin.volume || 0), 0) / 1e9).toFixed(2)}B
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-muted-foreground">Active Cryptocurrencies</h3>
-                        <p className="text-2xl font-bold">
-                          {cryptoData.filter((coin: CryptoData) => coin.price > 0).length}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card id="top-cryptocurrencies" className="h-full scroll-mt-24">
-                  <CardHeader className="p-6">
-                    <h2 className="text-xl md:text-2xl font-bold">Top Cryptocurrencies</h2>
+                    <h2 className="text-xl md:text-2xl font-bold">Cryptocurrency Price Charts</h2>
                   </CardHeader>
                   <CardContent className="p-4 md:p-6">
-                    <MarketTable 
-                      data={(cryptoData || [])
-                        .map((item: CryptoData) => ({
-                          ...item,
-                          name: item.name || 'Unknown',
-                          volume: item.volume || '0'
-                        }))
-                        .sort((a: CryptoData, b: CryptoData) => a.name.localeCompare(b.name))
-                      }
-                      loading={false}
-                      type="crypto"
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-card">
-                  <CardHeader className="p-6">
-                    <h2 className="text-lg md:text-xl font-semibold">Market Highlights</h2>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-2">Best Performers (24h)</h3>
-                        <div className="space-y-2">
-                          {cryptoData
-                            .sort((a: CryptoData, b: CryptoData) => b.change - a.change)
-                            .slice(0, 3)
-                            .map((coin: CryptoData) => (
-                              <div key={coin.symbol} className="flex items-center justify-between">
-                                <span className="text-sm">{coin.symbol}</span>
-                                <span className="text-sm text-green-500">+{coin.change.toFixed(2)}%</span>
+                    <div className="grid gap-6 md:grid-cols-2">
+                      {sortedHistoricalData.map((coin: HistoricalCryptoData) => {
+                        const cryptoInfo = cryptoData.find((c: CryptoData) => c.id === coin.coinId)
+                        const formattedTimestamp = cryptoInfo?.timestamp && isValidPastDate(cryptoInfo.timestamp)
+                          ? formatDate(cryptoInfo.timestamp)
+                          : '--'
+                        return (
+                          <article key={coin.coinId} className="overflow-hidden rounded-lg border hover:shadow-lg transition-shadow duration-200">
+                            <CardHeader className="p-4 bg-muted/50">
+                              <h3 className="text-base font-medium">
+                                {coin.symbol} Price (7d)
+                              </h3>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              <PriceChart
+                                data={coin.data}
+                                symbol={coin.symbol}
+                                showAxes={false}
+                                height={200}
+                              />
+                              <div className="p-4 text-sm text-muted-foreground border-t">
+                                <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'} | Price: ${cryptoInfo?.price.toFixed(2) || '--'} | {formattedTimestamp}
+                                </div>
                               </div>
-                            ))
-                          }
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-2">Highest Volume (24h)</h3>
-                        <div className="space-y-2">
-                          {cryptoData
-                            .sort((a: CryptoData, b: CryptoData) => Number(b.volume) - Number(a.volume))
-                            .slice(0, 3)
-                            .map((coin: CryptoData) => (
-                              <div key={coin.symbol} className="flex items-center justify-between">
-                                <span className="text-sm">{coin.symbol}</span>
-                                <span className="text-sm">${(Number(coin.volume) / 1e9).toFixed(2)}B</span>
-                              </div>
-                            ))
-                          }
-                        </div>
-                      </div>
+                            </CardContent>
+                          </article>
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
               </section>
-            </section>
-
-            <section id="cryptocurrency-price-charts" className="scroll-mt-24">
-              <Card>
-                <CardHeader className="p-6">
-                  <h2 className="text-xl md:text-2xl font-bold">Cryptocurrency Price Charts</h2>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {sortedHistoricalData.map((coin: HistoricalCryptoData) => {
-                      const cryptoInfo = cryptoData.find((c: CryptoData) => c.id === coin.coinId)
-                      const formattedTimestamp = cryptoInfo?.timestamp && isValidPastDate(cryptoInfo.timestamp)
-                        ? formatDate(cryptoInfo.timestamp)
-                        : '--'
-                      return (
-                        <article key={coin.coinId} className="overflow-hidden rounded-lg border hover:shadow-lg transition-shadow duration-200">
-                          <CardHeader className="p-4 bg-muted/50">
-                            <h3 className="text-base font-medium">
-                              {coin.symbol} Price (7d)
-                            </h3>
-                          </CardHeader>
-                          <CardContent className="p-0">
-                            <PriceChart
-                              data={coin.data}
-                              symbol={coin.symbol}
-                              showAxes={false}
-                              height={200}
-                            />
-                            <div className="p-4 text-sm text-muted-foreground border-t">
-                              <div className="font-medium">{cryptoInfo?.name || 'Cryptocurrency'} | Price: ${cryptoInfo?.price.toFixed(2) || '--'} | {formattedTimestamp}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </article>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-          </main>
+            </main>
+          </div>
 
           <footer className="mt-12 py-8 border-t border-border">
             <div className="px-4">
