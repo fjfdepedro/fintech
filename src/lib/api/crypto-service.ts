@@ -40,6 +40,26 @@ const specificCoins = [
   'curve-dao-token'
 ]
 
+// Helper function to process data in chunks
+const processInChunks = async <T>(
+  items: T[],
+  chunkSize: number,
+  processItem: (item: T) => Promise<any>
+): Promise<any[]> => {
+  const results: any[] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(
+      chunk.map(item => processItem(item).catch(error => {
+        console.error(`Error processing item:`, error);
+        return null;
+      }))
+    );
+    results.push(...chunkResults.filter(Boolean));
+  }
+  return results;
+};
+
 export const cryptoAPI = {
   async getTopCryptos(limit: number = 50): Promise<MarketData[]> {
     try {
@@ -140,22 +160,18 @@ export const cryptoAPI = {
 
   getHistoricalData: async (symbol: string) => {
     try {
-      const historicalData = await prisma.$transaction(async (tx) => {
-        return tx.marketData.findMany({
-          where: {
-            symbol: symbol.toUpperCase()
-          },
-          orderBy: {
-            timestamp: 'desc'
-          },
-          take: 7,
-          select: {
-            timestamp: true,
-            price: true
-          }
-        })
-      }, {
-        timeout: 10000 // 10 second timeout
+      const historicalData = await prisma.marketData.findMany({
+        where: {
+          symbol: symbol.toUpperCase()
+        },
+        orderBy: {
+          timestamp: 'desc'
+        },
+        take: 7,
+        select: {
+          timestamp: true,
+          price: true
+        }
       })
 
       return historicalData.map(data => [
@@ -165,6 +181,20 @@ export const cryptoAPI = {
     } catch (error) {
       console.error(`Error fetching historical data for ${symbol}:`, error)
       return [] // Return empty array on error
+    }
+  },
+
+  // Function to get historical data for multiple symbols
+  getHistoricalDataBatch: async (symbols: string[]) => {
+    try {
+      // Process symbols in chunks of 5 to avoid overwhelming the database
+      return await processInChunks(symbols, 5, async (symbol) => {
+        const data = await cryptoAPI.getHistoricalData(symbol);
+        return { symbol, data };
+      });
+    } catch (error) {
+      console.error('Error in batch historical data fetch:', error);
+      return [];
     }
   }
 }
