@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { MarketData } from '.prisma/client'
 import axiosRetry from 'axios-retry'
-import { prisma } from '../prisma'
+import prisma from '../prisma'
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3'
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
@@ -20,6 +20,19 @@ axiosRetry(coingeckoAxios, {
   retryDelay: (retryCount) => retryCount * 1000,
   retryCondition: (error) => error.response?.status === 429,
 })
+
+// Helper function to get current UTC timestamp
+const getCurrentUTCTimestamp = () => {
+  const now = new Date()
+  return new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    now.getUTCHours(),
+    now.getUTCMinutes(),
+    now.getUTCSeconds()
+  ))
+}
 
 // Lista de criptomonedas específicas que queremos seguir
 const specificCoins = [
@@ -81,6 +94,8 @@ export const cryptoAPI = {
       const data = await response.json()
       console.log('Respuesta de CoinGecko recibida:', data.length, 'registros')
       
+      const currentTimestamp = getCurrentUTCTimestamp();
+      
       return data.map((coin: any) => ({
         symbol: coin.symbol.toUpperCase(),
         name: coin.name,
@@ -89,7 +104,7 @@ export const cryptoAPI = {
         volume: coin.total_volume.toString(),
         market_cap: coin.market_cap,
         type: 'CRYPTO',
-        timestamp: new Date()
+        timestamp: currentTimestamp
       }))
     } catch (error) {
       console.error('Error obteniendo datos de CoinGecko:', error)
@@ -174,10 +189,22 @@ export const cryptoAPI = {
         }
       })
 
-      return historicalData.map(data => [
-        data.timestamp.getTime(),
-        data.price
-      ])
+      return historicalData.map(data => {
+        // Convert timestamp to UTC for consistency
+        const utcTimestamp = new Date(Date.UTC(
+          data.timestamp.getUTCFullYear(),
+          data.timestamp.getUTCMonth(),
+          data.timestamp.getUTCDate(),
+          data.timestamp.getUTCHours(),
+          data.timestamp.getUTCMinutes(),
+          data.timestamp.getUTCSeconds()
+        ))
+        
+        return {
+          date: utcTimestamp,
+          value: data.price
+        }
+      })
     } catch (error) {
       console.error(`Error fetching historical data for ${symbol}:`, error)
       return [] // Return empty array on error

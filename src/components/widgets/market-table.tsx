@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AlertCircle } from "lucide-react"
-import { format } from 'date-fns'
+import { formatDate } from "@/lib/utils/date"
 
 interface MarketData {
   symbol: string
@@ -78,7 +78,7 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
                   </TableCell>
                   <TableCell className="text-right">${(Number(item.volume) / 1e9).toFixed(2)}B</TableCell>
                   <TableCell className="text-right whitespace-nowrap pl-6">
-                    {format(new Date(new Date(item.timestamp).toUTCString()), 'MMM dd, yyyy HH:mm')} GMT
+                    {formatDate(item.timestamp)}
                   </TableCell>
                 </TableRow>
               );

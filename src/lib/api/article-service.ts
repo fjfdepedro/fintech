@@ -3,6 +3,7 @@ import type { MarketData } from '@prisma/client'
 import type { NewsArticle } from './news-service'
 import { newsAPI } from './news-service'
 import { marked } from 'marked'
+import { formatDate } from '../utils/date'
 
 const OPENROUTER_API_KEY = process.env.QWEN_API_KEY
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
@@ -65,7 +66,7 @@ ${crypto.name} (${crypto.symbol}):
 - 24h Change: ${crypto.change.toFixed(2)}%
 - Volume: $${Number(crypto.volume).toLocaleString('en-US')}
 - Market Cap: $${crypto.market_cap.toLocaleString('en-US')}
-- Last Updated: ${new Date(crypto.timestamp).toLocaleString()}
+- Last Updated: ${formatDate(crypto.timestamp)}
 `).join('\n')}
 `).join('\n')
 
@@ -75,7 +76,7 @@ General Crypto Market News:
 ${generalNews.map(news => `
 ${news.title}
 - Source: ${news.source_name}
-- Date: ${new Date(news.pubDate).toLocaleString()}
+- Date: ${formatDate(news.pubDate)}
 - Summary: ${news.description ? news.description.substring(0, 200) + '...' : 'No description available'}
 `).join('\n')}
 `
@@ -86,7 +87,7 @@ News specifically about ${symbol}:
 ${news.map(item => `
 ${item.title}
 - Source: ${item.source_name}
-- Date: ${new Date(item.pubDate).toLocaleString()}
+- Date: ${formatDate(item.pubDate)}
 - Summary: ${item.description ? item.description.substring(0, 200) + '...' : 'No description available'}
 `).join('\n')}
 `).join('\n')
@@ -110,7 +111,7 @@ ${crypto.name} (${crypto.symbol}):
 - Volume: $${Number(crypto.volume).toLocaleString('en-US')}
 - Market Cap: $${crypto.market_cap.toLocaleString('en-US')}
 - Category: ${Object.entries(CRYPTO_CATEGORIES).find(([_, symbols]) => symbols.includes(crypto.symbol))?.[0] || 'Other'}
-- Last Updated: ${new Date(crypto.timestamp).toLocaleString()}
+- Last Updated: ${formatDate(crypto.timestamp)}
 `).join('\n')}
 
 Please write a comprehensive market analysis without including any date in the title. Focus on:
@@ -154,15 +155,7 @@ Use professional financial language and focus on market analysis. Highlight any 
       // Procesar el contenido para añadir clases
       let processedContent = markdownContent
         // Add date header at the beginning
-        .replace(/^/, `<div class="date">Last Update: ${new Date(latestTimestamp).toLocaleDateString('en-US', { 
-          month: 'long', 
-          day: 'numeric', 
-          year: 'numeric'
-        })} at ${new Date(latestTimestamp).toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          hour12: false 
-        })} GMT</div>\n\n`)
+        .replace(/^/, `<div class="date">Last Update: ${formatDate(latestTimestamp)}</div>\n\n`)
         // Ensure title is correct and formatted
         .replace(/^.*?Comprehensive Financial Analysis of Cryptocurrency Markets.*?\n/m, '<h1 class="text-3xl font-bold mb-6">Comprehensive Financial Analysis of Cryptocurrency Markets</h1>\n')
         // Format section headers

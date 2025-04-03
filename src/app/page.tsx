@@ -8,6 +8,7 @@ import { checkAndUpdateCryptoData, getLatestCryptoData } from "@/lib/services/cr
 import prisma from '@/lib/prisma'
 import Script from 'next/script'
 import { CryptoData, HistoricalDataPoint, HistoricalCryptoData } from "@/types/crypto"
+import { formatDate, isValidPastDate } from "@/lib/utils/date"
 
 export const revalidate = 3600 // Revalidate every hour
 
@@ -17,32 +18,6 @@ async function getCryptoData(): Promise<CryptoData[]> {
   
   // Always return latest data
   return getLatestCryptoData()
-}
-
-async function getHistoricalData(symbol: string): Promise<HistoricalDataPoint[]> {
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - 7)
-
-  const historicalData = await prisma.marketData.findMany({
-    where: {
-      symbol: symbol.toUpperCase(),
-      timestamp: {
-        gte: startDate
-      }
-    },
-    orderBy: {
-      timestamp: 'asc'
-    },
-    select: {
-      price: true,
-      timestamp: true
-    }
-  })
-
-  return historicalData.map(record => ({
-    date: record.timestamp,
-    value: record.price
-  }))
 }
 
 async function getLatestArticle() {
@@ -62,26 +37,55 @@ export default async function Home() {
   ])
   const lastUpdated = cryptoData[0]?.timestamp
 
-  // Fetch historical data for all cryptocurrencies in parallel
-  const historicalDataPromises = cryptoData.map(async (coin: CryptoData): Promise<HistoricalCryptoData> => {
-    try {
-      const data = await getHistoricalData(coin.symbol)
-      return {
-        coinId: coin.id,
-        symbol: coin.symbol,
-        data
+  // Obtener todos los símbolos únicos
+  const symbols = cryptoData.map((coin: CryptoData) => coin.symbol)
+  
+  async function getHistoricalData(symbols: string[]): Promise<HistoricalCryptoData[]> {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 7)
+  
+    // Fetch all historical data in a single query
+    const historicalData = await prisma.marketData.findMany({
+      where: {
+        symbol: {
+          in: symbols.map(s => s.toUpperCase())
+        },
+        timestamp: {
+          gte: startDate
+        }
+      },
+      orderBy: {
+        timestamp: 'asc'
+      },
+      select: {
+        symbol: true,
+        price: true,
+        timestamp: true
       }
-    } catch (error) {
-      console.error(`Error fetching historical data for ${coin.symbol}:`, error)
-      return {
-        coinId: coin.id,
-        symbol: coin.symbol,
-        data: []
+    })
+  
+    // Agrupar los datos por símbolo
+    const groupedData = historicalData.reduce((acc, record) => {
+      if (!acc[record.symbol]) {
+        acc[record.symbol] = []
       }
-    }
-  })
-
-  const historicalData = await Promise.all(historicalDataPromises)
+      acc[record.symbol].push({
+        date: record.timestamp,
+        value: record.price
+      })
+      return acc
+    }, {} as Record<string, HistoricalDataPoint[]>)
+  
+    // Convertir a formato HistoricalCryptoData
+    return symbols.map(symbol => ({
+      coinId: cryptoData.find((c: CryptoData) => c.symbol === symbol.toUpperCase())?.id || symbol,
+      symbol: symbol.toUpperCase(),
+      data: groupedData[symbol.toUpperCase()] || []
+    }))
+  }
+  
+  // Fetch historical data for all cryptocurrencies in a single query
+  const historicalData = await getHistoricalData(symbols)
 
   // Prepare structured data for the page
   const structuredData = {
@@ -107,8 +111,8 @@ export default async function Home() {
   }
 
   // Ensure consistent date formatting with correct timezone
-  const formattedLastUpdated = lastUpdated 
-    ? format(new Date(new Date(lastUpdated).toUTCString()), "'Last Update:' MMM d, yyyy 'at' HH:mm 'GMT'")
+  const formattedLastUpdated = lastUpdated && isValidPastDate(lastUpdated)
+    ? formatDate(lastUpdated)
     : '--'
 
   // Sort historical data consistently
@@ -259,8 +263,8 @@ export default async function Home() {
                 <div className="grid gap-6 md:grid-cols-2">
                   {sortedHistoricalData.map((coin: HistoricalCryptoData) => {
                     const cryptoInfo = cryptoData.find((c: CryptoData) => c.id === coin.coinId)
-                    const formattedTimestamp = cryptoInfo?.timestamp 
-                      ? format(new Date(cryptoInfo.timestamp), 'MMM dd, yyyy HH:mm') + ' GMT'
+                    const formattedTimestamp = cryptoInfo?.timestamp && isValidPastDate(cryptoInfo.timestamp)
+                      ? formatDate(cryptoInfo.timestamp)
                       : '--'
                     return (
                       <article key={coin.coinId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { AreaChart } from "@tremor/react"
-import { format } from "date-fns"
+import { formatDate, formatShortDate } from "@/lib/utils/date"
 
 interface PriceData {
   date: Date
@@ -65,7 +65,7 @@ export function PriceChart({
   }
 
   const formattedData = validData.map(point => ({
-    date: format(new Date(point.date), 'MMM dd, yyyy HH:mm'),
+    date: formatShortDate(point.date),
     [symbol]: point.value
   }))
 
@@ -74,7 +74,7 @@ export function PriceChart({
 
     // Encontrar el dato original que corresponde a esta fecha exacta
     const originalData = validData.find(d => 
-      format(new Date(d.date), 'MMM dd, yyyy HH:mm') === label
+      formatShortDate(d.date) === label
     ) || validData[validData.length - 1]; // Usar el último dato si no se encuentra coincidencia
 
     return (
@@ -83,7 +83,7 @@ export function PriceChart({
           <div className={`flex w-1 flex-col bg-${color}-500 rounded`} />
           <div className="space-y-1">
             <p className="text-tremor-content text-xs">
-              {format(new Date(originalData.date), 'MMM dd, yyyy HH:mm')} GMT
+              {formatDate(originalData.date)}
             </p>
             <p className="font-medium text-tremor-content-emphasis">
               ${Number(payload[0].value).toFixed(2)}
