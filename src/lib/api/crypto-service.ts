@@ -1,11 +1,10 @@
 import axios from 'axios'
 import type { MarketData } from '.prisma/client'
 import axiosRetry from 'axios-retry'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '../prisma'
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3'
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
-const prisma = new PrismaClient()
 
 // Configurar headers por defecto para todas las llamadas a CoinGecko
 const coingeckoAxios = axios.create({
@@ -140,27 +139,32 @@ export const cryptoAPI = {
   },
 
   getHistoricalData: async (symbol: string) => {
-    const historicalData = await prisma.marketData.findMany({
-      where: {
-        symbol: symbol.toUpperCase()
-      },
-      orderBy: {
-        timestamp: 'desc'
-      },
-      take: 7,
-      select: {
-        timestamp: true,
-        price: true
-      }
-    })
+    try {
+      const historicalData = await prisma.$transaction(async (tx) => {
+        return tx.marketData.findMany({
+          where: {
+            symbol: symbol.toUpperCase()
+          },
+          orderBy: {
+            timestamp: 'desc'
+          },
+          take: 7,
+          select: {
+            timestamp: true,
+            price: true
+          }
+        })
+      }, {
+        timeout: 10000 // 10 second timeout
+      })
 
-    return historicalData.map(data => [
-      data.timestamp.getTime(),
-      data.price
-    ])
+      return historicalData.map(data => [
+        data.timestamp.getTime(),
+        data.price
+      ])
+    } catch (error) {
+      console.error(`Error fetching historical data for ${symbol}:`, error)
+      return [] // Return empty array on error
+    }
   }
 }
-
-cryptoAPI.getTopCryptos(50)
-  .then(data => data)
-  .catch(error => console.error('Error:', error))
