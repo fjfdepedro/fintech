@@ -5,9 +5,10 @@ export const revalidate = 3600 // 1 hora
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const symbol = searchParams.get('symbol')
-    const days = parseInt(searchParams.get('days') || '7')
+    // Use URL constructor with a base URL to avoid dynamic server usage
+    const url = new URL(request.url, 'http://localhost')
+    const symbol = url.searchParams.get('symbol')
+    const days = parseInt(url.searchParams.get('days') || '7')
 
     if (!symbol) {
       return createErrorResponse('Symbol parameter is required', 400)

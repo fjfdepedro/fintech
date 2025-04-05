@@ -14,7 +14,18 @@ async function getLatestCryptoData() {
     orderBy: {
       timestamp: 'desc'
     },
-    distinct: ['symbol']
+    distinct: ['symbol'],
+    select: {
+      id: true,
+      symbol: true,
+      name: true,
+      price: true,
+      change: true,
+      volume: true,
+      market_cap: true,
+      type: true,
+      timestamp: true
+    }
   })
   return cryptoData
 }
