@@ -1,14 +1,14 @@
 import prisma from '@/lib/prisma'
 import { createCachedResponse, createErrorResponse } from '@/lib/utils/cache'
+import { NextRequest } from 'next/server'
 
 export const revalidate = 3600 // 1 hora
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    // Use URL constructor with a base URL to avoid dynamic server usage
-    const url = new URL(request.url, 'http://localhost')
-    const symbol = url.searchParams.get('symbol')
-    const days = parseInt(url.searchParams.get('days') || '7')
+    // Use NextRequest instead of Request to avoid dynamic server usage
+    const symbol = request.nextUrl.searchParams.get('symbol')
+    const days = parseInt(request.nextUrl.searchParams.get('days') || '7')
 
     if (!symbol) {
       return createErrorResponse('Symbol parameter is required', 400)

@@ -59,10 +59,6 @@ model MarketData {
   market_cap        Float
   type              String
   timestamp         DateTime @default(now())
-  high_24h          Float?
-  low_24h           Float?
-  total_supply      Float?
-  circulating_supply Float?
 }
 
 model apiLimit {

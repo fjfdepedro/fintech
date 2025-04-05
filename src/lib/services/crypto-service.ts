@@ -1,6 +1,5 @@
 import prisma from '@/lib/prisma'
 import { cryptoAPI } from '@/lib/api/crypto-service'
-import { revalidatePath } from 'next/cache'
 import { CryptoData } from '@/types/crypto'
 
 const UPDATE_INTERVAL = 55 * 60 * 1000 // 55 minutos (para que coincida con la revalidación de la página)
@@ -42,8 +41,8 @@ export async function checkAndUpdateCryptoData() {
           }))
         })
 
-        // 4. Revalidate cache
-        revalidatePath('/')
+        // Note: We're removing revalidatePath as it causes dynamic server usage errors
+        // The page will be revalidated based on the revalidate setting in page.tsx
 
         console.log('Crypto data updated:', result.count, 'records')
         return { updated: true, count: result.count }

@@ -35,10 +35,10 @@ export function createCachedResponse(
     )
   }
 
-  // Añadir tags para revalidación específica
-  if (tags.length > 0) {
-    headers.set('x-cache-tags', tags.join(','))
-  }
+  // Note: We're removing the tags header as it causes revalidation issues
+  // if (tags.length > 0) {
+  //   headers.set('x-cache-tags', tags.join(','))
+  // }
 
   // Añadir timestamp de generación
   headers.set('x-cache-timestamp', new Date().toISOString())

@@ -23,10 +23,6 @@ interface MarketData {
   timestamp: Date
   logo_url?: string | null
   market_cap: number
-  high_24h?: number
-  low_24h?: number
-  total_supply?: number
-  circulating_supply?: number
 }
 
 interface MarketTableProps {
