@@ -11,10 +11,10 @@ export async function GET() {
       orderBy: { timestamp: 'desc' },
       take: 25,
     })
-    
+
     return NextResponse.json(cryptoData)
   } catch (error) {
     console.error('Error fetching crypto data:', error)
     return NextResponse.json({ error: 'Database error' }, { status: 500 })
   }
-} 
+}

@@ -39,6 +39,13 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Error fetching historical data:', error)
-    return createErrorResponse(error)
+    // Convert unknown error to string or Error object
+    const errorMessage = error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : 'An unknown error occurred'
+
+    return createErrorResponse(errorMessage)
   }
-} 
+}
