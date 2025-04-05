@@ -4,9 +4,12 @@ import type { NewsArticle } from './news-service'
 import { newsAPI } from './news-service'
 import { marked } from 'marked'
 import { formatDate } from '../utils/date'
+import fs from 'fs'
+import path from 'path'
 
 const OPENROUTER_API_KEY = process.env.QWEN_API_KEY
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
 
 // Agrupar criptomonedas por categoría
 const CRYPTO_CATEGORIES = {
@@ -40,22 +43,32 @@ export const articleAPI = {
         return { category, cryptos }
       })
 
-      // Obtener noticias específicas para las top 5 criptomonedas por market cap
+      // Obtener noticias específicas para las top 3 criptomonedas por market cap
       const topCryptos = cryptoData
         .sort((a, b) => b.market_cap - a.market_cap)
         .slice(0, 5)
 
-      const specificNewsPromises = topCryptos.map(crypto => 
-        newsAPI.getCryptoSpecificNews(crypto.symbol.toLowerCase())
-      )
-
-      const specificNewsResults = await Promise.allSettled(specificNewsPromises)
-      const specificNews = specificNewsResults
-        .map((result, index) => ({
-          symbol: topCryptos[index].symbol,
-          news: result.status === 'fulfilled' ? result.value : []
-        }))
-        .filter(item => item.news.length > 0)
+      // Filtrar las noticias generales para obtener noticias específicas para cada criptomoneda
+      const specificNews = topCryptos.map(crypto => {
+        const symbol = crypto.symbol.toLowerCase()
+        const name = crypto.name.toLowerCase()
+        
+        // Filtrar noticias que mencionan específicamente esta criptomoneda
+        const cryptoNews = generalNews.filter(news => {
+          const title = news.title.toLowerCase()
+          const description = news.description?.toLowerCase() || ''
+          
+          return title.includes(symbol) || 
+                 title.includes(name) || 
+                 description.includes(symbol) || 
+                 description.includes(name)
+        })
+        
+        return {
+          symbol: crypto.symbol,
+          news: cryptoNews
+        }
+      }).filter(item => item.news.length > 0)
 
       // Generar sección de datos de mercado por categoría
       const cryptoSection = categorizedCryptos.map(({ category, cryptos }) => `
@@ -77,7 +90,7 @@ ${generalNews.map(news => `
 ${news.title}
 - Source: ${news.source_name}
 - Date: ${formatDate(news.pubDate)}
-- Summary: ${news.description ? news.description.substring(0, 200) + '...' : 'No description available'}
+- Summary: ${news.description || 'No description available'}
 `).join('\n')}
 `
 
@@ -88,7 +101,7 @@ ${news.map(item => `
 ${item.title}
 - Source: ${item.source_name}
 - Date: ${formatDate(item.pubDate)}
-- Summary: ${item.description ? item.description.substring(0, 200) + '...' : 'No description available'}
+- Summary: ${item.description || 'No description available'}
 `).join('\n')}
 `).join('\n')
 
@@ -159,6 +172,25 @@ ${generalNewsSection}
 ${specificNewsSection}
 
 Please use ALL of this data to create a comprehensive analysis that connects market movements to news events and provides detailed insights across all categories.`
+
+      // Guardar el prompt en un archivo de texto en la carpeta public cuando estamos en entorno de desarrollo
+      if (IS_DEVELOPMENT) {
+        try {
+          const publicDir = path.join(process.cwd(), 'public')
+          const promptFilePath = path.join(publicDir, 'qwen-prompt.txt')
+          
+          // Asegurarse de que el directorio public existe
+          if (!fs.existsSync(publicDir)) {
+            fs.mkdirSync(publicDir, { recursive: true })
+          }
+          
+          // Escribir el prompt en el archivo
+          fs.writeFileSync(promptFilePath, prompt)
+          console.log(`Prompt guardado en: ${promptFilePath}`)
+        } catch (error) {
+          console.error('Error al guardar el prompt:', error)
+        }
+      }
 
       const response = await axios.post(OPENROUTER_URL, {
         model: "qwen/qwq-32b:free",
