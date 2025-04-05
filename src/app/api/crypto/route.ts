@@ -8,8 +8,8 @@ import { CryptoDataSchema, validateApiResponse, createApiError } from '@/lib/uti
 import { z } from 'zod'
 import { CryptoData } from '@/types/crypto'
 
-// Configuración de revalidación
-export const revalidate = 3600 // Revalidate every hour
+export const dynamic = 'force-static'
+export const revalidate = 3600
 
 // Schema for validation
 const cryptoDataSchema = z.array(z.object({
@@ -25,43 +25,20 @@ const cryptoDataSchema = z.array(z.object({
 
 export async function GET() {
   try {
-    // During build, only get data from database
-    if (process.env.NODE_ENV === 'production' && process.env.NEXT_RUNTIME === 'edge') {
-      const data = await getLatestCryptoData()
-      return NextResponse.json(data, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
-        }
-      })
-    }
-
-    // During runtime, get latest data
     const data = await getLatestCryptoData()
-    const validationResult = cryptoDataSchema.safeParse(data)
-
-    if (!validationResult.success) {
-      console.error('Validation error:', validationResult.error)
-      return NextResponse.json({ error: 'Invalid data format' }, { 
-        status: 500,
-        headers: {
-          'Cache-Control': 'no-store'
-        }
-      })
-    }
-
-    return NextResponse.json(data, {
+    
+    return new NextResponse(JSON.stringify(data), {
       headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=59'
       }
     })
   } catch (error) {
     console.error('Error fetching crypto data:', error)
-    return NextResponse.json({ error: 'Failed to fetch crypto data' }, { 
-      status: 500,
-      headers: {
-        'Cache-Control': 'no-store'
-      }
-    })
+    return new NextResponse(
+      JSON.stringify({ error: 'Failed to fetch data' }),
+      { status: 500 }
+    )
   }
 }
 
