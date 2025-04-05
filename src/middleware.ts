@@ -36,9 +36,18 @@ const cronRoutes = [
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
+  // Cache configuration for the home page
+  if (path === '/') {
+    const response = NextResponse.next()
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=59')
+    return response
+  }
+
   // Ignorar archivos estáticos
   if (path.match(/\.(ico|png|jpg|jpeg|gif|svg|css|js)$/)) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+    return response
   }
 
   // Check if it's a cron route
@@ -147,6 +156,7 @@ export async function middleware(request: NextRequest) {
 // Configure which routes to run middleware on
 export const config = {
   matcher: [
+    '/',  // Add home page
     '/api/:path*',
     '/dashboard/:path*',
     '/profile/:path*'
