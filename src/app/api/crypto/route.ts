@@ -6,35 +6,62 @@ import prisma from '@/lib/prisma'
 import { revalidatePath } from '@/lib/utils/revalidate'
 import { CryptoDataSchema, validateApiResponse, createApiError } from '@/lib/utils/api-validation'
 import { z } from 'zod'
+import { CryptoData } from '@/types/crypto'
 
 // Configuración de revalidación
-export const revalidate = 43200 // 12 horas
+export const revalidate = 3600 // Revalidate every hour
+
+// Schema for validation
+const cryptoDataSchema = z.array(z.object({
+  id: z.string(),
+  name: z.string(),
+  symbol: z.string(),
+  price: z.number(),
+  volume: z.string(),
+  market_cap: z.number(),
+  change: z.number(),
+  timestamp: z.date()
+}))
 
 export async function GET() {
   try {
-    const data = await getLatestCryptoData()
-    
-    // Validar la respuesta
-    const validation = validateApiResponse(data, z.array(CryptoDataSchema))
-    if (!validation.success) {
-      return createErrorResponse(validation.error.message)
+    // During build, only get data from database
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      const data = await getLatestCryptoData()
+      return NextResponse.json(data, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+        }
+      })
     }
-    
-    return createCachedResponse(validation.data, {
-      revalidate: 43200,
-      staleWhileRevalidate: 59,
-      tags: ['crypto', 'market-data'],
-      isDynamic: true
+
+    // During runtime, get latest data
+    const data = await getLatestCryptoData()
+    const validationResult = cryptoDataSchema.safeParse(data)
+
+    if (!validationResult.success) {
+      console.error('Validation error:', validationResult.error)
+      return NextResponse.json({ error: 'Invalid data format' }, { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      })
+    }
+
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=60'
+      }
     })
   } catch (error) {
     console.error('Error fetching crypto data:', error)
-    return createErrorResponse(
-      createApiError(
-        'FETCH_ERROR',
-        'Failed to fetch crypto data',
-        error instanceof Error ? error.message : undefined
-      ).message
-    )
+    return NextResponse.json({ error: 'Failed to fetch crypto data' }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    })
   }
 }
 

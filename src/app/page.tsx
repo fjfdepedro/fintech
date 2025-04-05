@@ -18,19 +18,25 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // Revalidate every hour
 
 async function getCryptoData(): Promise<CryptoData[]> {
-  // Check and update if needed
-  await checkAndUpdateCryptoData()
+  // During build, only get data from database
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return getLatestCryptoData()
+  }
   
-  // Always return latest data
+  // During runtime, check and update if needed
+  await checkAndUpdateCryptoData()
   return getLatestCryptoData()
 }
 
 // Function to get latest article and update if needed
 async function getArticle() {
-  // Check and update if needed
-  await checkAndUpdateArticle()
+  // During build, only get data from database
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return getLatestArticle()
+  }
   
-  // Always return latest article
+  // During runtime, check and update if needed
+  await checkAndUpdateArticle()
   return getLatestArticle()
 }
 
