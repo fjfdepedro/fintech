@@ -2,6 +2,8 @@ import prisma from '@/lib/prisma'
 import { createCachedResponse, createErrorResponse } from '@/lib/utils/cache'
 import { NextRequest } from 'next/server'
 
+// Marcar esta ruta como dinámica para evitar errores de generación estática
+export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // 1 hora
 
 export async function GET(request: NextRequest) {

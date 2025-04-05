@@ -12,6 +12,8 @@ import { formatDate, isValidPastDate } from "@/lib/utils/date"
 import { ImageGallery } from '@/components/ui/image-gallery'
 import Image from 'next/image'
 
+// Marcar esta página como dinámica para evitar errores de generación estática
+export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // Revalidate every hour
 
 async function getCryptoData(): Promise<CryptoData[]> {

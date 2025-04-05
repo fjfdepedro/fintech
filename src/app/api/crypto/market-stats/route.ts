@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { cryptoAPI } from '@/lib/api/crypto-service'
 
+// Marcar esta ruta como dinámica para evitar errores de generación estática
+export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // 1 hora
 
 export async function GET() {
