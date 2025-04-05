@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { CryptoArticle } from "../components/crypto-article"
 import { Header } from "@/components/header"
 import { checkAndUpdateCryptoData, getLatestCryptoData } from "@/lib/services/crypto-service"
+import { checkAndUpdateArticle, getLatestArticle } from "@/lib/services/article-service"
 import prisma from '@/lib/prisma'
 import Script from 'next/script'
 import { CryptoData, HistoricalDataPoint, HistoricalCryptoData } from "@/types/crypto"
@@ -24,14 +25,13 @@ async function getCryptoData(): Promise<CryptoData[]> {
   return getLatestCryptoData()
 }
 
-async function getLatestArticle() {
-  const article = await prisma.article.findFirst({
-    orderBy: {
-      createdAt: 'desc'
-    }
-  })
-
-  return article
+// Function to get latest article and update if needed
+async function getArticle() {
+  // Check and update if needed
+  await checkAndUpdateArticle()
+  
+  // Always return latest article
+  return getLatestArticle()
 }
 
 // Function to get crypto metadata
@@ -47,7 +47,7 @@ async function getCryptoMetadata() {
 export default async function Home() {
   const [cryptoData, article, cryptoMetadata] = await Promise.all([
     getCryptoData(),
-    getLatestArticle(),
+    getArticle(),
     getCryptoMetadata()
   ])
   const lastUpdated = cryptoData[0]?.timestamp

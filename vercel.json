@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/update-crypto",
-      "schedule": "30 7 * * *"
+      "schedule": "30 1 * * *"
     },
     {
       "path": "/api/cron/update-article",

@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma'
 import { cryptoAPI } from '@/lib/api/crypto-service'
 import { CryptoData } from '@/types/crypto'
 
-const UPDATE_INTERVAL = 55 * 60 * 1000 // 55 minutos (para que coincida con la revalidación de la página)
+const UPDATE_INTERVAL = 60 * 60 * 1000 // 1 hora (para que coincida con la revalidación de la página)
 
 export async function checkAndUpdateCryptoData() {
   try {
