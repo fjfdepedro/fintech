@@ -15,14 +15,6 @@ export async function GET() {
       },
       orderBy: {
         timestamp: 'desc'
-      },
-      select: {
-        symbol: true,
-        price: true,
-        change: true,
-        market_cap: true,
-        volume: true,
-        timestamp: true
       }
     })
 
