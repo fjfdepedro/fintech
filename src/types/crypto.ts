@@ -35,6 +35,10 @@ export interface CryptoData {
   market_cap: number
   timestamp: Date
   type: string
+  high_24h?: number
+  low_24h?: number
+  total_supply?: number
+  circulating_supply?: number
 }
 
 export interface HistoricalDataPoint {

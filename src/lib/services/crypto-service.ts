@@ -26,7 +26,7 @@ export async function checkAndUpdateCryptoData() {
       try {
         // 2. Fetch new data from API
         console.log('Fetching new crypto data from API...')
-        const data = await cryptoAPI.getTopCryptos(50)
+        const data = await cryptoAPI.getTopCryptos()
         
         // 3. Save to database
         const result = await prisma.marketData.createMany({
@@ -78,7 +78,6 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
         AND m.timestamp = lt.latest_timestamp
       WHERE m.type = 'CRYPTO'
       ORDER BY m.market_cap DESC
-      LIMIT 50
     `
 
     return latestData
@@ -87,4 +86,4 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
     // Return empty array if query fails
     return []
   }
-} 
+}

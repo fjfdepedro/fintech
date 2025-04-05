@@ -59,7 +59,7 @@ export const articleAPI = {
 
       // Generar sección de datos de mercado por categoría
       const cryptoSection = categorizedCryptos.map(({ category, cryptos }) => `
-${category} Cryptocurrencies:
+${category} Cryptos:
 ${cryptos.map(crypto => `
 ${crypto.name} (${crypto.symbol}):
 - Current Price: $${crypto.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
@@ -92,48 +92,73 @@ ${item.title}
 `).join('\n')}
 `).join('\n')
 
-      const prompt = `Write a comprehensive financial analysis article with the exact title "Comprehensive Financial Analysis of Cryptocurrency Markets" (do not add any date to the title). Follow this structure:
+      const prompt = `Write a comprehensive and detailed financial analysis article with the exact title "Crypto Market Analysis: Trends, News Impact, and Technical Insights" (do not add any date to the title). The article should be thorough and integrate ALL the data and news provided below.
 
-1. Market Overview by Category:
+Follow this structure:
+
+1. Market Overview
+   - Overall market direction and sentiment
+   - Total market capitalization analysis
+   - Market dominance trends
+   - Key market indicators
+
+2. Key Market Trends
+   - Category-by-category analysis
+   - Emerging patterns and shifts
+   - Comparative performance across categories
+   - Notable sector rotations
+
+3. Specific Crypto Updates:
+   - Notable price movements with specific percentages
+   - Trading volume analysis with comparisons
+   - Market sentiment indicators
+   - Correlation with news events
+
+4. Individual Crypto Analysis:
+   - Technical analysis for major cryptocurrencies
+   - Support and resistance levels
+   - Trading volume patterns
+   - Market sentiment
+   - News impact on price action
+
+Instructions:
+1. For the market overview:
+   - Focus on the overall market direction with specific data points
+   - Include total market capitalization with trends
+   - Discuss market dominance trends with percentages
+   - Analyze overall market sentiment
+
+2. For key market trends:
+   - Analyze the performance of cryptos within each category
+   - Identify emerging patterns with specific examples
+   - Note any significant shifts with data to support
+   - Compare performance across different categories
+
+3. For the top cryptos with specific news:
+   - Include relevant price action with specific percentages
+   - Discuss volume changes with comparisons
+   - Note market sentiment with supporting evidence
+   - Directly connect news events to price movements
+
+4. For each individual crypto:
+   - Focus on key price levels with specific values
+   - Note significant support/resistance with context
+   - Include volume analysis with trends
+   - Mention any relevant news and its impact
+
+IMPORTANT: This article should be comprehensive and detailed. Use ALL the data provided below. Reference specific numbers, percentages, and news items throughout the analysis. Connect market movements to news events. The article should be thorough and integrate every piece of information provided.
+
+Keep the tone professional and analytical. Use specific numbers and percentages when discussing price changes. For each individual crypto analysis, be detailed and informative, focusing on the most important aspects of its current market position and recent developments.
+
+Here is the current market data and news to base your analysis on:
+
 ${cryptoSection}
 
-2. General Market News and Trends:
 ${generalNewsSection}
 
-3. Specific Cryptocurrency Updates:
 ${specificNewsSection}
 
-4. Individual Cryptocurrency Analysis:
-${cryptoData.map(crypto => `
-${crypto.name} (${crypto.symbol}):
-- Current Price: $${crypto.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
-- 24h Change: ${crypto.change.toFixed(2)}%
-- Volume: $${Number(crypto.volume).toLocaleString('en-US')}
-- Market Cap: $${crypto.market_cap.toLocaleString('en-US')}
-- Category: ${Object.entries(CRYPTO_CATEGORIES).find(([_, symbols]) => symbols.includes(crypto.symbol))?.[0] || 'Other'}
-- Last Updated: ${formatDate(crypto.timestamp)}
-`).join('\n')}
-
-Please write a comprehensive market analysis without including any date in the title. Focus on:
-1. A brief market overview highlighting the most significant movements across categories.
-2. For each category:
-   - Analyze the performance of cryptocurrencies within that category
-   - Discuss any relevant news and their impact on prices
-   - Identify trends or patterns specific to that category
-3. For the top cryptocurrencies with specific news:
-   - Analyze how recent news events have impacted their price movements
-   - Discuss potential future implications
-4. For each individual cryptocurrency:
-   - Provide a concise analysis of its current performance
-   - Highlight any specific news or events affecting it
-   - Discuss its position within its category
-   - Give a brief technical analysis based on price action and volume
-5. A final summary that:
-   - Connects market trends across categories
-   - Highlights key correlations between news events and price movements
-   - Provides a forward-looking perspective based on the current data
-
-Use professional financial language and focus on market analysis. Highlight any correlations between market movements and news events. Include specific price points and percentage changes when relevant. For each individual cryptocurrency analysis, keep it concise but informative, focusing on the most important aspects of its current market position and recent developments.`
+Please use ALL of this data to create a comprehensive analysis that connects market movements to news events and provides detailed insights across all categories.`
 
       const response = await axios.post(OPENROUTER_URL, {
         model: "qwen/qwq-32b:free",
@@ -154,10 +179,8 @@ Use professional financial language and focus on market analysis. Highlight any 
 
       // Procesar el contenido para añadir clases
       let processedContent = markdownContent
-        // Add date header at the beginning
-        .replace(/^/, `<div class="date">Last Update: ${formatDate(latestTimestamp)}</div>\n\n`)
         // Ensure title is correct and formatted
-        .replace(/^.*?Comprehensive Financial Analysis of Cryptocurrency Markets.*?\n/m, '<h1 class="text-3xl font-bold mb-6">Comprehensive Financial Analysis of Cryptocurrency Markets</h1>\n')
+        .replace(/^.*?Crypto Market Analysis: Trends, News Impact, and Technical Insights.*?\n/m, '<h1 class="text-3xl font-bold mb-6">Crypto Market Analysis: Trends, News Impact, and Technical Insights</h1>\n')
         // Format section headers
         .replace(/^(\d+)\.\s+([^\n]+)/gm, '<h2 class="text-2xl font-semibold mt-8 mb-4 pb-2 border-b">$1. $2</h2>')
         // Format category headers

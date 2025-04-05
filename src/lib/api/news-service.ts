@@ -97,7 +97,7 @@ export const newsAPI = {
           if (news.duplicate) return false
           
           // Filtrar por términos relevantes en el título o descripción
-          const relevantTerms = ['price', 'market', 'trading', 'blockchain', 'defi', 'crypto', 'cryptocurrency']
+          const relevantTerms = ['price', 'market', 'trading', 'blockchain', 'defi', 'crypto']
           const hasRelevantTerms = relevantTerms.some(term => 
             news.title.toLowerCase().includes(term) || 
             (news.description && news.description.toLowerCase().includes(term))
@@ -160,7 +160,7 @@ export const newsAPI = {
           apikey: NEWSDATA_API_KEY,
           language: 'en',
           category: 'business',
-          q: `(${searchTerm}) AND (price OR market OR trading OR blockchain OR defi OR crypto OR cryptocurrency) AND (source:coindesk OR source:cointelegraph OR source:decrypt OR source:theblock OR source:cryptoslate OR source:bitcoinist OR source:cryptonews OR source:cryptopotato OR source:beincrypto OR source:ambcrypto)`,
+          q: `(${searchTerm}) AND (price OR market OR trading OR blockchain OR defi OR crypto) AND (source:coindesk OR source:cointelegraph OR source:decrypt OR source:theblock OR source:cryptoslate OR source:bitcoinist OR source:cryptonews OR source:cryptopotato OR source:beincrypto OR source:ambcrypto)`,
           size: 10
         }
       })

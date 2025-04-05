@@ -50,19 +50,15 @@ model Portfolio {
 }
 
 model MarketData {
-  id                String   @id @default(cuid())
-  symbol            String
-  name              String
-  price             Float
-  change            Float
-  volume            String
-  market_cap        Float
-  type              String
-  timestamp         DateTime @default(now())
-  high_24h          Float?
-  low_24h           Float?
-  total_supply      Float?
-  circulating_supply Float?
+  id         String   @id @default(cuid())
+  symbol     String
+  name       String
+  price      Float
+  change     Float
+  volume     String
+  market_cap Float
+  type       String
+  timestamp  DateTime @default(now())
 }
 
 model apiLimit {
@@ -82,31 +78,11 @@ model Article {
   @@index([createdAt])
 }
 
-model CryptoMarketMetadata {
-  id               String   @id(map: "cryptoMarketMetadata_pkey")
-  symbol           String   @unique(map: "cryptoMarketMetadata_symbol_key")
-  logo_url         String?
-  description      String?
-  category         String?
-  website_url      String?
-  tech_doc_url     String?
-  source_code_url  String?
-  total_market_cap Float    @default(0)
-  total_volume_24h Float    @default(0)
-  btc_dominance    Float    @default(0)
-  eth_dominance    Float    @default(0)
-  active_cryptos   Int      @default(0)
-  active_exchanges Int      @default(0)
-  timestamp        DateTime @default(now())
-  updated_at       DateTime
-
-  @@index([symbol], map: "cryptoMarketMetadata_symbol_idx")
-  @@index([timestamp], map: "cryptoMarketMetadata_timestamp_idx")
-}
-
 enum SymbolType {
   STOCK
   CRYPTO
   ETF
   FOREX
 }
+
+

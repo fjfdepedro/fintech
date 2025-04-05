@@ -3,30 +3,12 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { validateApiRequest } from '@/lib/utils/security'
 
-// Rate limiting configuration
-const RATE_LIMIT = 100 // requests per minute
-const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute in milliseconds
+// Configuración del rate limiting
+const RATE_LIMIT_REQUESTS = Number(process.env.RATE_LIMIT_REQUESTS) || 100
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60000
 
-// Store for rate limiting
-const rateLimitStore = new Map<string, { count: number; timestamp: number }>()
-
-// Helper function to check rate limit
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const userLimit = rateLimitStore.get(ip)
-
-  if (!userLimit || now - userLimit.timestamp > RATE_LIMIT_WINDOW) {
-    rateLimitStore.set(ip, { count: 1, timestamp: now })
-    return true
-  }
-
-  if (userLimit.count >= RATE_LIMIT) {
-    return false
-  }
-
-  userLimit.count++
-  return true
-}
+// Mapa para almacenar las solicitudes por IP
+const ipRequests = new Map<string, { count: number; resetTime: number }>()
 
 // List of protected API routes that require authentication
 const protectedRoutes = [
@@ -53,6 +35,11 @@ const cronRoutes = [
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
+
+  // Ignorar archivos estáticos
+  if (path.match(/\.(ico|png|jpg|jpeg|gif|svg|css|js)$/)) {
+    return NextResponse.next()
+  }
 
   // Check if it's a cron route
   if (cronRoutes.some(route => path.startsWith(route))) {
@@ -92,19 +79,41 @@ export async function middleware(request: NextRequest) {
 
     // Get the client's IP
     const ip = request.ip ?? '127.0.0.1'
+    const now = Date.now()
 
-    // Check rate limit
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json(
-        { error: 'Too many requests' },
-        { 
+    // Limpiar entradas antiguas
+    for (const [key, value] of ipRequests.entries()) {
+      if (now > value.resetTime) {
+        ipRequests.delete(key)
+      }
+    }
+
+    // Obtener o crear el registro de la IP
+    const ipData = ipRequests.get(ip) ?? {
+      count: 0,
+      resetTime: now + RATE_LIMIT_WINDOW_MS
+    }
+
+    // Verificar si se ha excedido el límite
+    if (ipData.count >= RATE_LIMIT_REQUESTS) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Too many requests',
+          message: 'Please try again later'
+        }),
+        {
           status: 429,
           headers: {
-            'Retry-After': '60'
+            'Content-Type': 'application/json',
+            'Retry-After': String(Math.ceil((ipData.resetTime - now) / 1000))
           }
         }
       )
     }
+
+    // Incrementar el contador
+    ipData.count++
+    ipRequests.set(ip, ipData)
 
     // For protected API routes that require authentication
     if (isProtectedRoute) {

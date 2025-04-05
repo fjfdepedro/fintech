@@ -23,7 +23,7 @@ export function useCryptoData() {
         
         // 2. Obtener datos actualizados
         console.log('Obteniendo datos actualizados...')
-        const updatedData = await axios.get('/api/crypto?limit=50')
+        const updatedData = await axios.get('/api/crypto')
         console.log('Datos recibidos:', updatedData.data.length, 'registros')
         
         if (updatedData.data.length > 0) {

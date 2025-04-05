@@ -1,7 +1,7 @@
 {
-  "name": "CryptoToday",
-  "short_name": "CryptoToday",
-  "description": "Real-time cryptocurrency market insights and analysis",
+  "name": "Crypto Market Insights",
+  "short_name": "Crypto Market",
+  "description": "Real-time crypto market insights and analysis",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

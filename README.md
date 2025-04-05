@@ -1,11 +1,11 @@
-# CryptoToday
+# Crypto Market Insights
 
-A comprehensive financial dashboard built with Next.js 14, TypeScript, and Prisma, featuring real-time cryptocurrency data, market analysis, and AI-powered insights.
+A comprehensive financial dashboard built with Next.js 14, TypeScript, and Prisma, featuring real-time crypto data, market analysis, and AI-powered insights.
 
 ## Features
 
 ### Real-time Data & Auto-Updates
-- Automatic updates of cryptocurrency data from CoinGecko API
+- Automatic updates of crypto data from CoinGecko API
 - AI-powered market analysis using QWen API
 - Incremental Static Regeneration (ISR) with smart caching
 - Automatic retry mechanism for failed updates
@@ -100,7 +100,7 @@ headers: {
 ### Update System Details
 - **Cache Duration**: 1 hour (3600 seconds) for all routes
 - **Update Cycle**:
-  - Cryptocurrency data updates every 55 minutes
+  - Crypto data updates every 55 minutes
   - Cache revalidation every hour
   - 5-minute buffer between update and revalidation
 - **Protected Routes**:
@@ -149,7 +149,7 @@ npm run start
 ## API Integration
 
 ### CoinGecko API
-- Real-time cryptocurrency data
+- Real-time crypto data
 - Market prices and trends
 - Hourly updates with rate limiting
 

@@ -35,8 +35,8 @@ const getCurrentUTCTimestamp = () => {
 }
 
 // Lista de criptomonedas específicas que queremos seguir
-const specificCoins = [
-  // Top 25 actuales
+export const specificCoins = [
+  // Top Tier
   'bitcoin', 'ethereum', 'binancecoin', 'ripple', 'tether',
   'usd-coin', 'cardano', 'dogecoin', 'polkadot', 'solana',
   'avalanche-2', 'chainlink', 'uniswap', 'stellar', 'cosmos',
@@ -44,13 +44,25 @@ const specificCoins = [
   'wrapped-bitcoin', 'wrapped-steth', 'leo-token', 'lido-staked-ether',
   'shiba-inu',
   
-  // Añadidas hasta 50
+  // Mid Tier
   'polygon', 'monero', 'bitcoin-cash', 'litecoin', 'dai',
   'ethereum-classic', 'hedera-hashgraph', 'filecoin', 'internet-computer',
   'arbitrum', 'optimism', 'cronos', 'algorand', 'vechain',
   'aave', 'eos', 'tezos', 'quant-network', 'elrond-erd-2',
   'pax-gold', 'theta-token', 'fantom', 'thorchain', 'pancakeswap-token',
-  'curve-dao-token'
+  'curve-dao-token',
+  
+  // Nuevas Adiciones
+  'render', // RNDR
+  'sei-network', // SEI
+  'floki', // FLOKI
+  'dogwifhat', // WIF
+  'hyperliquid', // HYPE
+  'ondo', // ONDO
+  'berachain', // BERA - Podría no estar disponible aún en CMC
+  'story-protocol', // IP - Podría no estar disponible aún en CMC
+  'solaxy', // SOLX - Podría no estar disponible aún en CMC
+  'qubetics' // TICS - Podría no estar disponible aún en CMC
 ]
 
 // Helper function to process data in chunks
@@ -74,12 +86,12 @@ const processInChunks = async <T>(
 };
 
 export const cryptoAPI = {
-  async getTopCryptos(limit: number = 50): Promise<MarketData[]> {
+  async getTopCryptos(): Promise<MarketData[]> {
     try {
       console.log('Llamando a CoinGecko API...')
       
       const response = await fetch(
-        `${COINGECKO_API_URL}/coins/markets?vs_currency=usd&ids=${specificCoins.join(',')}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false&price_change_percentage=24h&locale=en`,
+        `${COINGECKO_API_URL}/coins/markets?vs_currency=usd&ids=${specificCoins.join(',')}&order=market_cap_desc&per_page=${specificCoins.length}&page=1&sparkline=false&price_change_percentage=24h&locale=en`,
         {
           headers: {
             'x-cg-demo-api-key': COINGECKO_API_KEY || '',

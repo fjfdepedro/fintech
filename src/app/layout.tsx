@@ -17,11 +17,11 @@ export const revalidate = 3600 // Revalidate every hour
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.cryptotoday.click'),
   title: {
-    default: "CryptoToday | Real-time Crypto Market Insights",
-    template: "%s | CryptoToday"
+    template: '%s | Crypto Market Insights',
+    default: 'Crypto Market Insights',
   },
-  description: "Get real-time cryptocurrency market insights, price charts, and market analysis. Track top cryptocurrencies, view price trends, and stay updated with the latest market data.",
-  keywords: ["cryptocurrency", "crypto market", "market analysis", "price charts", "fintech", "crypto tracking", "market insights"],
+  description: "Get real-time crypto market insights, price charts, and market analysis. Track top cryptos, view price trends, and stay updated with the latest market data.",
+  keywords: ["crypto", "crypto market", "market analysis", "price charts", "fintech", "crypto tracking", "market insights"],
   authors: [{ name: "CryptoToday" }],
   creator: "CryptoToday",
   publisher: "CryptoToday",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://www.cryptotoday.click",
     title: "CryptoToday | Real-time Crypto Market Insights",
-    description: "Get real-time cryptocurrency market insights, price charts, and market analysis. Track top cryptocurrencies, view price trends, and stay updated with the latest market data.",
+    description: "Get real-time crypto market insights, price charts, and market analysis. Track top cryptos, view price trends, and stay updated with the latest market data.",
     siteName: "CryptoToday",
     images: [
       {
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "CryptoToday | Real-time Crypto Market Insights",
-    description: "Get real-time cryptocurrency market insights, price charts, and market analysis. Track top cryptocurrencies, view price trends, and stay updated with the latest market data.",
+    description: "Get real-time crypto market insights, price charts, and market analysis. Track top cryptos, view price trends, and stay updated with the latest market data.",
     images: ["/og-image.jpg"],
     creator: "@cryptotoday",
   },
