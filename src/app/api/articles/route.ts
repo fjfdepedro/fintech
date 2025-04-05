@@ -7,7 +7,7 @@ export const revalidate = 3600 // Revalidate every hour
 export async function GET() {
   try {
     // During build, only get data from database
-    if (process.env.NEXT_PHASE === 'phase-production-build') {
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_RUNTIME === 'edge') {
       const article = await getLatestArticle()
       if (!article) {
         return NextResponse.json({ error: 'No article found' }, { 

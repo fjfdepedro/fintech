@@ -14,7 +14,7 @@ import { ImageGallery } from '@/components/ui/image-gallery'
 import Image from 'next/image'
 
 // Marcar esta página como dinámica para evitar errores de generación estática
-export const dynamic = 'force-dynamic'
+export const dynamic = 'auto'
 export const revalidate = 3600 // Revalidate every hour
 
 async function getCryptoData(): Promise<CryptoData[]> {
@@ -22,7 +22,7 @@ async function getCryptoData(): Promise<CryptoData[]> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     return getLatestCryptoData()
   }
-  
+
   // During runtime, check and update if needed
   await checkAndUpdateCryptoData()
   return getLatestCryptoData()
@@ -34,7 +34,7 @@ async function getArticle() {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     return getLatestArticle()
   }
-  
+
   // During runtime, check and update if needed
   await checkAndUpdateArticle()
   return getLatestArticle()
@@ -51,11 +51,20 @@ async function getCryptoMetadata() {
 }
 
 export default async function Home() {
+  // Use Next.js fetch with cache
   const [cryptoData, article, cryptoMetadata] = await Promise.all([
     getCryptoData(),
     getArticle(),
     getCryptoMetadata()
   ])
+  
+  // Cache the response at the edge
+  const response = new Response(JSON.stringify({ cryptoData, article, cryptoMetadata }), {
+    headers: {
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=59'
+    }
+  })
+
   const lastUpdated = cryptoData[0]?.timestamp
 
   // Create a map of symbol to logo URL
