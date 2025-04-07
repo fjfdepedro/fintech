@@ -3,10 +3,29 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  
+  const scrollToSection = useCallback((sectionId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsMenuOpen(false)
+    const element = document.getElementById(sectionId)
+    if (element) {
+      // Add a slight delay to ensure DOM updates before scrolling
+      setTimeout(() => {
+        const headerOffset = 100 // Adjust based on your header height
+        const elementPosition = element.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        })
+      }, 50)
+    }
+  }, [])
 
   return (
     <div className="sticky top-0 z-50 w-full mb-4 sm:mb-6">
@@ -43,38 +62,42 @@ export function Header() {
         </Link>
 
         <nav className="hidden sm:flex items-center gap-8">
-          <a 
+          <Link 
             href="#daily-crypto-analysis" 
+            onClick={(e) => scrollToSection('daily-crypto-analysis', e)}
             className="group relative px-4 py-2 text-lg font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:text-[#111111] dark:hover:text-white transition-all duration-300"
           >
             <span className="relative z-10">Daily Crypto Analysis</span>
             <div className="absolute inset-0 bg-gradient-to-r from-[#E5E5E5] to-white dark:from-[#2A2A2A] dark:to-[#111111] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
             <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-[#E5E5E5] dark:to-[#D1D5DB] group-hover:w-full transition-all duration-300" />
-          </a>
-          <a 
+          </Link>
+          <Link 
             href="#crypto-statistics" 
+            onClick={(e) => scrollToSection('crypto-statistics', e)}
             className="group relative px-4 py-2 text-lg font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:text-[#111111] dark:hover:text-white transition-all duration-300"
           >
             <span className="relative z-10">Crypto Statistics</span>
             <div className="absolute inset-0 bg-gradient-to-r from-[#E5E5E5] to-white dark:from-[#2A2A2A] dark:to-[#111111] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
             <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-[#E5E5E5] dark:to-[#D1D5DB] group-hover:w-full transition-all duration-300" />
-          </a>
-          <a 
+          </Link>
+          <Link 
             href="#top-cryptos" 
+            onClick={(e) => scrollToSection('top-cryptos', e)}
             className="group relative px-4 py-2 text-lg font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:text-[#111111] dark:hover:text-white transition-all duration-300"
           >
             <span className="relative z-10">Top Cryptos</span>
             <div className="absolute inset-0 bg-gradient-to-r from-[#E5E5E5] to-white dark:from-[#2A2A2A] dark:to-[#111111] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
             <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-[#E5E5E5] dark:to-[#D1D5DB] group-hover:w-full transition-all duration-300" />
-          </a>
-          <a 
+          </Link>
+          <Link 
             href="#crypto-price-charts" 
+            onClick={(e) => scrollToSection('crypto-price-charts', e)}
             className="group relative px-4 py-2 text-lg font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:text-[#111111] dark:hover:text-white transition-all duration-300"
           >
             <span className="relative z-10">Crypto Price Charts</span>
             <div className="absolute inset-0 bg-gradient-to-r from-[#E5E5E5] to-white dark:from-[#2A2A2A] dark:to-[#111111] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
             <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-[#E5E5E5] dark:to-[#D1D5DB] group-hover:w-full transition-all duration-300" />
-          </a>
+          </Link>
         </nav>
         
         {/* Mobile Menu Button */}
@@ -94,38 +117,38 @@ export function Header() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col divide-y divide-[#D1D5DB]/10 dark:divide-[#2A2A2A]/50">
-              <a 
-                href="#daily-crypto-analysis" 
-                className="px-4 py-3.5 text-[15px] font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
-                onClick={() => setIsMenuOpen(false)}
+              <Link 
+                href="#daily-crypto-analysis"
+                onClick={(e) => scrollToSection('daily-crypto-analysis', e)}
+                className="px-4 py-3.5 text-[15px] text-left font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
               >
                 Daily Crypto Analysis
-              </a>
-              <a 
-                href="#crypto-statistics" 
-                className="px-4 py-3.5 text-[15px] font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
-                onClick={() => setIsMenuOpen(false)}
+              </Link>
+              <Link 
+                href="#crypto-statistics"
+                onClick={(e) => scrollToSection('crypto-statistics', e)}
+                className="px-4 py-3.5 text-[15px] text-left font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80" 
               >
                 Crypto Statistics
-              </a>
-              <a 
-                href="#top-cryptos" 
-                className="px-4 py-3.5 text-[15px] font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
-                onClick={() => setIsMenuOpen(false)}
+              </Link>
+              <Link 
+                href="#top-cryptos"
+                onClick={(e) => scrollToSection('top-cryptos', e)}
+                className="px-4 py-3.5 text-[15px] text-left font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
               >
                 Top Cryptos
-              </a>
-              <a 
-                href="#crypto-price-charts" 
-                className="px-4 py-3.5 text-[15px] font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
-                onClick={() => setIsMenuOpen(false)}
+              </Link>
+              <Link 
+                href="#crypto-price-charts"
+                onClick={(e) => scrollToSection('crypto-price-charts', e)}
+                className="px-4 py-3.5 text-[15px] text-left font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
               >
                 Crypto Price Charts
-              </a>
+              </Link>
             </div>
           </div>
         </div>
       )}
     </div>
   )
-} 
+}
