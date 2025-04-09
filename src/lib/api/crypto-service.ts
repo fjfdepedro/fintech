@@ -71,6 +71,21 @@ export const specificCoins = [
   'venom' // VENOM - Venom
 ]
 
+const BATCH_SIZE = 10
+const DELAY_BETWEEN_BATCHES = 1000
+
+// Helper function to chunk array into smaller arrays
+const chunkArray = <T>(array: T[], size: number): T[][] => {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
+
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Helper function to process data in chunks
 const processInChunks = async <T>(
   items: T[],
@@ -90,21 +105,6 @@ const processInChunks = async <T>(
   }
   return results;
 };
-
-const BATCH_SIZE = 10 // Número de criptos por petición
-const DELAY_BETWEEN_BATCHES = 1000 // 1 segundo entre lotes
-
-// Helper function to chunk array into smaller arrays
-function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = []
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size))
-  }
-  return chunks
-}
-
-// Helper function to delay execution
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 export const cryptoAPI = {
   async getTopCryptos(): Promise<MarketData[]> {
@@ -165,7 +165,7 @@ export const cryptoAPI = {
               console.log(`Rate limit alcanzado en lote ${i + 1}, usando datos en caché para este lote`)
               // Find and use cached data for this batch
               const cachedBatchData = existingData.filter(data => 
-                batch.includes(data.id.toLowerCase())
+                batch.includes(data.symbol.toLowerCase())
               )
               updatedData.push(...cachedBatchData)
               continue
@@ -187,7 +187,7 @@ export const cryptoAPI = {
           console.error(`Error en lote ${i + 1}:`, error)
           // Use cached data for this batch on error
           const cachedBatchData = existingData.filter(data => 
-            batch.includes(data.id.toLowerCase())
+            batch.includes(data.symbol.toLowerCase())
           )
           updatedData.push(...cachedBatchData)
           continue
@@ -213,7 +213,7 @@ export const cryptoAPI = {
       const finalData = [
         ...newData,
         ...existingData.filter(data => 
-          !coinsToUpdate.includes(data.id.toLowerCase())
+          !coinsToUpdate.includes(data.symbol.toLowerCase())
         )
       ]
 
@@ -346,7 +346,7 @@ export const cryptoAPI = {
   getHistoricalDataBatch: async (symbols: string[]) => {
     try {
       // Process symbols in chunks of 5 to avoid overwhelming the database
-      return await processInChunks(symbols, 5, async (symbol) => {
+      return await processInChunks<string>(symbols, 5, async (symbol: string) => {
         const data = await cryptoAPI.getHistoricalData(symbol);
         return { symbol, data };
       });

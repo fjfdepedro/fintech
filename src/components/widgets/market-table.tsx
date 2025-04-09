@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 import { formatDate } from "@/lib/utils/date"
 import Image from "next/image"
+import { useState } from "react"
 
 interface MarketData {
   symbol: string
@@ -25,6 +26,9 @@ interface MarketData {
   market_cap: number
 }
 
+type SortField = 'name' | 'price' | 'change' | 'market_cap' | 'volume' | 'timestamp'
+type SortDirection = 'asc' | 'desc' | null
+
 interface MarketTableProps {
   data: MarketData[]
   loading?: boolean
@@ -34,6 +38,56 @@ interface MarketTableProps {
 }
 
 export function MarketTable({ data, loading, error, type, className }: MarketTableProps) {
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle direction or reset
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null)
+        setSortField(null)
+      } else {
+        setSortDirection('asc')
+      }
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-2 h-4 w-4" />
+    if (sortDirection === 'asc') return <ArrowUp className="ml-2 h-4 w-4" />
+    if (sortDirection === 'desc') return <ArrowDown className="ml-2 h-4 w-4" />
+    return <ArrowUpDown className="ml-2 h-4 w-4" />
+  }
+
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortField || !sortDirection) return 0
+
+    const multiplier = sortDirection === 'asc' ? 1 : -1
+
+    switch (sortField) {
+      case 'name':
+        return multiplier * ((a.name || '').localeCompare(b.name || ''))
+      case 'price':
+        return multiplier * (a.price - b.price)
+      case 'change':
+        return multiplier * (a.change - b.change)
+      case 'market_cap':
+        return multiplier * (a.market_cap - b.market_cap)
+      case 'volume':
+        return multiplier * (Number(a.volume) - Number(b.volume))
+      case 'timestamp':
+        return multiplier * (a.timestamp.getTime() - b.timestamp.getTime())
+      default:
+        return 0
+    }
+  })
+
   if (error) {
     return (
       <div className="flex items-center justify-center p-6 text-red-500">
@@ -48,12 +102,60 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-left">Name</TableHead>
-            <TableHead className="text-right">Price</TableHead>
-            <TableHead className="text-right">24h Change</TableHead>
-            <TableHead className="text-right">Market Cap</TableHead>
-            <TableHead className="text-right">Volume</TableHead>
-            <TableHead className="text-right whitespace-nowrap min-w-[200px]">Last Update</TableHead>
+            <TableHead 
+              className="text-left cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort('name')}
+            >
+              <div className="flex items-center">
+                Name
+                {getSortIcon('name')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="text-right cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort('price')}
+            >
+              <div className="flex items-center justify-end">
+                Price
+                {getSortIcon('price')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="text-right cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort('change')}
+            >
+              <div className="flex items-center justify-end">
+                24h Change
+                {getSortIcon('change')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="text-right cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort('market_cap')}
+            >
+              <div className="flex items-center justify-end">
+                Market Cap
+                {getSortIcon('market_cap')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="text-right cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort('volume')}
+            >
+              <div className="flex items-center justify-end">
+                Volume
+                {getSortIcon('volume')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="text-right cursor-pointer hover:bg-muted/50 whitespace-nowrap min-w-[200px]"
+              onClick={() => handleSort('timestamp')}
+            >
+              <div className="flex items-center justify-end">
+                Last Update
+                {getSortIcon('timestamp')}
+              </div>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -71,11 +173,10 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
                 <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="h-4 w-24 ml-auto" /></TableCell>
-                <TableCell className="text-right"><Skeleton className="h-4 w-24 ml-auto" /></TableCell>
               </TableRow>
             ))
           ) : (
-            data.map((item) => {
+            sortedData.map((item) => {
               return (
                 <TableRow key={`${item.symbol}-${item.timestamp}`}>
                   <TableCell>
