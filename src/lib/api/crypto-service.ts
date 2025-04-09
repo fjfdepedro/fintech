@@ -43,7 +43,6 @@ export const specificCoins = [
   'near', 'aptos', 'sui', 'the-open-network', 'tron',
   'wrapped-bitcoin', 'wrapped-steth', 'leo-token', 'lido-staked-ether',
   'shiba-inu',
-  
   // Mid Tier
   'polygon', 'monero', 'bitcoin-cash', 'litecoin', 'dai',
   'ethereum-classic', 'hedera-hashgraph', 'filecoin', 'internet-computer',
@@ -51,7 +50,6 @@ export const specificCoins = [
   'aave', 'eos', 'tezos', 'quant-network', 'elrond-erd-2',
   'pax-gold', 'theta-token', 'fantom', 'thorchain', 'pancakeswap-token',
   'curve-dao-token',
-  
   // Nuevas Adiciones
   'render', // RNDR
   'sei-network', // SEI
@@ -62,7 +60,15 @@ export const specificCoins = [
   'berachain', // BERA - Podría no estar disponible aún en CMC
   'story-protocol', // IP - Podría no estar disponible aún en CMC
   'solaxy', // SOLX - Podría no estar disponible aún en CMC
-  'qubetics' // TICS - Podría no estar disponible aún en CMC
+  'qubetics', // TICS - Podría no estar disponible aún en CMC
+  // Criptomonedas mediáticas y populares
+  'trump', // $TRUMP - Trump Coin
+  'melania', // $MELANIA - Melania Coin
+  'dawgz', // $DAGZ - Dawgz AI
+  'book-of-meme', // BOME - Book of Meme
+  'slothana', // SLOTH - Slothana
+  'shytoshi-kusama', // $SHY - Shytoshi Kusama
+  'venom' // VENOM - Venom
 ]
 
 // Helper function to process data in chunks
