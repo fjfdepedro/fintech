@@ -91,41 +91,154 @@ const processInChunks = async <T>(
   return results;
 };
 
+const BATCH_SIZE = 10 // Número de criptos por petición
+const DELAY_BETWEEN_BATCHES = 1000 // 1 segundo entre lotes
+
+// Helper function to chunk array into smaller arrays
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size))
+  }
+  return chunks
+}
+
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 export const cryptoAPI = {
   async getTopCryptos(): Promise<MarketData[]> {
     try {
-      console.log('Llamando a CoinGecko API...')
+      console.log('Iniciando obtención de datos de CoinGecko...')
       
-      const response = await fetch(
-        `${COINGECKO_API_URL}/coins/markets?vs_currency=usd&ids=${specificCoins.join(',')}&order=market_cap_desc&per_page=${specificCoins.length}&page=1&sparkline=false&price_change_percentage=24h&locale=en`,
-        {
-          headers: {
-            'x-cg-demo-api-key': COINGECKO_API_KEY || '',
-          },
+      // First, get all existing data from the database
+      const existingData = await prisma.marketData.findMany({
+        where: {
+          type: 'CRYPTO',
+          symbol: {
+            in: specificCoins.map(coin => coin.toUpperCase())
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        },
+        distinct: ['symbol']
+      })
+
+      // Calculate which coins need updating (older than 1 hour)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const coinsToUpdate = specificCoins.filter(coin => {
+        const existingCoin = existingData.find(data => 
+          data.symbol.toLowerCase() === coin.toUpperCase()
+        )
+        return !existingCoin || existingCoin.timestamp < oneHourAgo
+      })
+
+      console.log(`${coinsToUpdate.length} monedas necesitan actualización`)
+      
+      if (coinsToUpdate.length === 0) {
+        console.log('Todos los datos están actualizados, usando caché')
+        return existingData
+      }
+
+      // Dividir las monedas a actualizar en lotes más pequeños
+      const coinBatches = chunkArray(coinsToUpdate, BATCH_SIZE)
+      const updatedData: any[] = []
+      
+      // Procesar cada lote con un retraso entre ellos
+      for (let i = 0; i < coinBatches.length; i++) {
+        const batch = coinBatches[i]
+        console.log(`Procesando lote ${i + 1}/${coinBatches.length} (${batch.length} monedas)`)
+        
+        try {
+          const response = await fetch(
+            `${COINGECKO_API_URL}/coins/markets?vs_currency=usd&ids=${batch.join(',')}&order=market_cap_desc&per_page=${batch.length}&page=1&sparkline=false&price_change_percentage=24h&locale=en`,
+            {
+              headers: {
+                'x-cg-demo-api-key': COINGECKO_API_KEY || '',
+              },
+            }
+          )
+          
+          if (!response.ok) {
+            if (response.status === 429) {
+              console.log(`Rate limit alcanzado en lote ${i + 1}, usando datos en caché para este lote`)
+              // Find and use cached data for this batch
+              const cachedBatchData = existingData.filter(data => 
+                batch.includes(data.id.toLowerCase())
+              )
+              updatedData.push(...cachedBatchData)
+              continue
+            }
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          
+          const batchData = await response.json()
+          if (Array.isArray(batchData)) {
+            updatedData.push(...batchData)
+          }
+          
+          // Esperar antes de la siguiente petición
+          if (i < coinBatches.length - 1) {
+            console.log(`Esperando ${DELAY_BETWEEN_BATCHES}ms antes del siguiente lote...`)
+            await delay(DELAY_BETWEEN_BATCHES)
+          }
+        } catch (error) {
+          console.error(`Error en lote ${i + 1}:`, error)
+          // Use cached data for this batch on error
+          const cachedBatchData = existingData.filter(data => 
+            batch.includes(data.id.toLowerCase())
+          )
+          updatedData.push(...cachedBatchData)
+          continue
         }
-      )
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
       }
       
-      const data = await response.json()
-      console.log('Respuesta de CoinGecko recibida:', data.length, 'registros')
+      const currentTimestamp = getCurrentUTCTimestamp()
       
-      const currentTimestamp = getCurrentUTCTimestamp();
-      
-      return data.map((coin: any) => ({
+      // Convert updated data to MarketData format
+      const newData = updatedData.map(coin => ({
+        id: coin.id,
         symbol: coin.symbol.toUpperCase(),
         name: coin.name,
-        price: coin.current_price,
-        change: coin.price_change_percentage_24h,
-        volume: coin.total_volume.toString(),
-        market_cap: coin.market_cap,
+        price: coin.current_price || 0,
+        change: coin.price_change_percentage_24h || 0,
+        volume: (coin.total_volume || 0).toString(),
+        market_cap: coin.market_cap || 0,
         type: 'CRYPTO',
         timestamp: currentTimestamp
       }))
+
+      // Combine new data with existing data that didn't need updating
+      const finalData = [
+        ...newData,
+        ...existingData.filter(data => 
+          !coinsToUpdate.includes(data.id.toLowerCase())
+        )
+      ]
+
+      console.log(`Completado: ${finalData.length} monedas en total (${newData.length} actualizadas, ${finalData.length - newData.length} en caché)`)
+      
+      return finalData
+
     } catch (error) {
       console.error('Error obteniendo datos de CoinGecko:', error)
+      // Return all cached data as fallback
+      const cachedData = await prisma.marketData.findMany({
+        where: {
+          type: 'CRYPTO'
+        },
+        orderBy: {
+          timestamp: 'desc'
+        },
+        distinct: ['symbol'],
+        take: specificCoins.length
+      })
+      
+      if (cachedData.length > 0) {
+        console.log('Usando datos en caché después de error:', cachedData.length, 'registros')
+        return cachedData
+      }
       throw error
     }
   },
