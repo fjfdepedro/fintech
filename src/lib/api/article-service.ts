@@ -1,15 +1,17 @@
 import axios from 'axios'
-import type { MarketData } from '@prisma/client'
+import type { MarketData, Prisma } from '@prisma/client'
 import type { NewsArticle } from './news-service'
 import { newsAPI } from './news-service'
 import { marked } from 'marked'
 import { formatDate } from '../utils/date'
 import fs from 'fs'
 import path from 'path'
+import { PrismaClient } from '@prisma/client'
 
 const OPENROUTER_API_KEY = process.env.QWEN_API_KEY
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
+const prisma = new PrismaClient()
 
 // Agrupar criptomonedas por categoría
 const CRYPTO_CATEGORIES = {
@@ -31,185 +33,197 @@ export interface ArticleResponse {
 export const articleAPI = {
   async generateArticle(cryptoData: MarketData[], generalNews: NewsArticle[]): Promise<ArticleResponse> {
     try {
-      // Get the most recent timestamp from cryptoData
-      const latestTimestamp = cryptoData.reduce((latest, crypto) => 
-        crypto.timestamp > latest ? crypto.timestamp : latest,
-        cryptoData[0]?.timestamp || new Date()
-      )
+      console.log('Starting article generation process...')
+      console.log(`Initial data: ${cryptoData.length} crypto assets and ${generalNews.length} news articles`)
 
-      // Agrupar criptomonedas por categoría
-      const categorizedCryptos = Object.entries(CRYPTO_CATEGORIES).map(([category, symbols]) => {
-        const cryptos = cryptoData.filter(crypto => symbols.includes(crypto.symbol))
-        return { category, cryptos }
-      })
+      // Verificar si tenemos noticias y intentar obtenerlas si no hay
+      if (!generalNews || generalNews.length === 0) {
+        console.log('No news provided, attempting to fetch news...')
+        try {
+          generalNews = await newsAPI.getCryptoNews()
+          console.log(`Fetched ${generalNews.length} news articles:`)
+          generalNews.forEach(news => console.log(`- ${news.title}`))
+        } catch (error) {
+          console.error('Failed to fetch news:', error)
+          generalNews = [] // Initialize as empty array if fetch fails
+        }
+      }
 
-      // Obtener noticias específicas para las top 3 criptomonedas por market cap
-      const topCryptos = cryptoData
+      // Get top 5 cryptocurrencies
+      const topCoins = cryptoData
         .sort((a, b) => b.market_cap - a.market_cap)
         .slice(0, 5)
+      
+      console.log('Top cryptocurrencies selected:', topCoins.map(c => c.symbol).join(', '))
 
-      // Filtrar las noticias generales para obtener noticias específicas para cada criptomoneda
-      const specificNews = topCryptos.map(crypto => {
-        const symbol = crypto.symbol.toLowerCase()
-        const name = crypto.name.toLowerCase()
+      // Get specific news for each top coin
+      const specificNewsPromises = topCoins.map(coin => 
+        newsAPI.getCryptoSpecificNews(coin.symbol)
+      )
+      const specificNewsResults = await Promise.all(specificNewsPromises)
+      
+      // Format general market news section
+      const generalNewsSection = generalNews.length > 0 ? `
+Recent Market News:
+${generalNews.slice(0, 5).map(article => {
+  if (!article.title) return ''
+  const newsDate = new Date(article.pubDate).toLocaleDateString()
+  return `
+Title: ${article.title.trim()}
+Source: ${article.source_name || 'Unknown'}
+Date: ${newsDate}
+Summary: ${article.description ? 
+    article.description.slice(0, 2500).trim() + 
+    (article.description.length > 2500 ? '...' : '') : 
+    'No description available'}`
+}).filter(Boolean).join('\n')}` : ''
+
+      // Format specific crypto news sections
+      const specificNewsSections = topCoins.map((coin, index) => {
+        const coinNews = specificNewsResults[index] || []
+        if (!coin.name || !coin.symbol) return ''
         
-        // Filtrar noticias que mencionan específicamente esta criptomoneda
-        const cryptoNews = generalNews.filter(news => {
-          const title = news.title.toLowerCase()
-          const description = news.description?.toLowerCase() || ''
-          
-          return title.includes(symbol) || 
-                 title.includes(name) || 
-                 description.includes(symbol) || 
-                 description.includes(name)
-        })
-        
-        return {
-          symbol: crypto.symbol,
-          news: cryptoNews
-        }
-      }).filter(item => item.news.length > 0)
+        return `
+${coin.name} (${coin.symbol}) Market Impact:
+Current Price: $${typeof coin.price === 'number' ? coin.price.toFixed(2) : 'N/A'}
+24h Change: ${typeof coin.change === 'number' ? (coin.change as number).toFixed(2) : 'N/A'}%
+Trading Volume: $${typeof coin.volume === 'number' ? (coin.volume as number).toLocaleString() : 'N/A'}
 
-      // Generar sección de datos de mercado por categoría
-      const cryptoSection = categorizedCryptos.map(({ category, cryptos }) => `
-${category} Cryptos:
-${cryptos.map(crypto => `
-${crypto.name} (${crypto.symbol}):
-- Current Price: $${crypto.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}
-- 24h Change: ${crypto.change.toFixed(2)}%
-- Volume: $${Number(crypto.volume).toLocaleString('en-US')}
-- Market Cap: $${crypto.market_cap.toLocaleString('en-US')}
-- Last Updated: ${formatDate(crypto.timestamp)}
-`).join('\n')}
-`).join('\n')
+Related News:
+${coinNews.slice(0, 3).map(article => {
+  if (!article.title) return ''
+  const newsDate = new Date(article.pubDate).toLocaleDateString()
+  return `
+Title: ${article.title.trim()}
+Source: ${article.source_name || 'Unknown'}
+Date: ${newsDate}
+Summary: ${article.description ? 
+    article.description.slice(0, 2500).trim() + 
+    (article.description.length > 2500 ? '...' : '') : 
+    'No description available'}`
+}).filter(Boolean).join('\n')}`
+      }).filter(Boolean).join('\n\n')
 
-      // Generar sección de noticias generales
-      const generalNewsSection = `
-General Crypto Market News:
-${generalNews.map(news => `
-${news.title}
-- Source: ${news.source_name}
-- Date: ${formatDate(news.pubDate)}
-- Summary: ${news.description || 'No description available'}
-`).join('\n')}
-`
+      // Create market data section
+      const cryptoSection = cryptoData.map(coin => `
+${coin.name} (${coin.symbol}):
+Price: $${typeof coin.price === 'number' ? coin.price.toFixed(2) : 'N/A'}
+24h Change: ${typeof coin.change === 'number' ? coin.change.toFixed(2) : 'N/A'}%
+Volume: $${typeof coin.volume === 'number' ? (coin.volume as number).toLocaleString() : 'N/A'}`
+      ).join('\n\n')
 
-      // Generar sección de noticias específicas
-      const specificNewsSection = specificNews.map(({ symbol, news }) => `
-News specifically about ${symbol}:
-${news.map(item => `
-${item.title}
-- Source: ${item.source_name}
-- Date: ${formatDate(item.pubDate)}
-- Summary: ${item.description || 'No description available'}
-`).join('\n')}
-`).join('\n')
+      console.log('Constructing final prompt...')
 
-      const prompt = `Write a comprehensive and detailed financial analysis article with the exact title "Crypto Market Analysis: Trends, News Impact, and Technical Insights" (do not add any date to the title). The article should be thorough and integrate ALL the data and news provided below.
+      const prompt = `Write a crypto market analysis article focusing on how recent news impacts cryptocurrency prices. Title: "Crypto Market Analysis: News Impact and Market Movements"
 
-Follow this structure:
+Your task is to analyze each news article and its impact on cryptocurrency prices. For each news article provided:
 
-1. Market Overview
-   - Overall market direction and sentiment
-   - Total market capitalization analysis
-   - Market dominance trends
-   - Key market indicators
+1. First, analyze these major news stories:
+   - Neptune Digital Assets Bitcoin treasury expansion
+   - House of Doge and 21Shares DOGE ETP partnership
+   - TRON's $900 million fee milestone
+   - Any other significant news provided
 
-2. Key Market Trends
-   - Category-by-category analysis
-   - Emerging patterns and shifts
-   - Comparative performance across categories
-   - Notable sector rotations
+2. For each news story:
+   a) What cryptocurrencies are mentioned?
+   b) What are their current prices and 24h changes?
+   c) How might this news explain their price movements?
 
-3. Specific Crypto Updates:
-   - Notable price movements with specific percentages
-   - Trading volume analysis with comparisons
-   - Market sentiment indicators
-   - Correlation with news events
+3. Structure each news analysis like this:
+   NEWS HEADLINE
+   - Cryptocurrencies Involved: [List them with current prices]
+   - Key Points from News: [Brief summary]
+   - Price Impact Analysis: [Connect news to price movements]
 
-4. Individual Crypto Analysis:
-   - Technical analysis for major cryptocurrencies
-   - Support and resistance levels
-   - Trading volume patterns
-   - Market sentiment
-   - News impact on price action
+4. After analyzing individual news, group related stories by category:
+   - Bitcoin and Layer 1 news
+   - DeFi developments
+   - Exchange and institutional news
+   - Other significant developments
 
-Instructions:
-1. For the market overview:
-   - Focus on the overall market direction with specific data points
-   - Include total market capitalization with trends
-   - Discuss market dominance trends with percentages
-   - Analyze overall market sentiment
+Remember:
+- MUST analyze EACH news story provided
+- Use exact prices and percentages from the market data
+- Focus on connecting news events to price movements
+- No predictions or trading advice
 
-2. For key market trends:
-   - Analyze the performance of cryptos within each category
-   - Identify emerging patterns with specific examples
-   - Note any significant shifts with data to support
-   - Compare performance across different categories
+Here is the data to analyze:
 
-3. For the top cryptos with specific news:
-   - Include relevant price action with specific percentages
-   - Discuss volume changes with comparisons
-   - Note market sentiment with supporting evidence
-   - Directly connect news events to price movements
-
-4. For each individual crypto:
-   - Focus on key price levels with specific values
-   - Note significant support/resistance with context
-   - Include volume analysis with trends
-   - Mention any relevant news and its impact
-
-IMPORTANT: This article should be comprehensive and detailed. Use ALL the data provided below. Reference specific numbers, percentages, and news items throughout the analysis. Connect market movements to news events. The article should be thorough and integrate every piece of information provided.
-
-Keep the tone professional and analytical. Use specific numbers and percentages when discussing price changes. For each individual crypto analysis, be detailed and informative, focusing on the most important aspects of its current market position and recent developments.
-
-Here is the current market data and news to base your analysis on:
+Market Data:
 
 ${cryptoSection}
 
+Recent News:
+
 ${generalNewsSection}
 
-${specificNewsSection}
+Specific Cryptocurrency News:
 
-Please use ALL of this data to create a comprehensive analysis that connects market movements to news events and provides detailed insights across all categories.`
+${specificNewsSections}`
 
-      // Guardar el prompt en un archivo de texto en la carpeta public cuando estamos en entorno de desarrollo
+      // Guardar el prompt y logging
       if (IS_DEVELOPMENT) {
         try {
           const publicDir = path.join(process.cwd(), 'public')
           const promptFilePath = path.join(publicDir, 'qwen-prompt.txt')
           
-          // Asegurarse de que el directorio public existe
           if (!fs.existsSync(publicDir)) {
             fs.mkdirSync(publicDir, { recursive: true })
           }
           
-          // Escribir el prompt en el archivo
           fs.writeFileSync(promptFilePath, prompt)
-          console.log(`Prompt guardado en: ${promptFilePath}`)
+          console.log(`Prompt saved to: ${promptFilePath}`)
+          console.log('Prompt structure:')
+          console.log('- Market Data sections:', cryptoSection.split('\n\n').length)
+          console.log('- General News articles:', generalNews.length)
+          console.log('- Specific News sections:', specificNewsSections.split('\n\n').length)
         } catch (error) {
-          console.error('Error al guardar el prompt:', error)
+          console.error('Error saving prompt:', error)
         }
       }
 
+      console.log('Sending request to OpenRouter API...')
       const response = await axios.post(OPENROUTER_URL, {
         model: "qwen/qwq-32b:free",
         messages: [
           {
             role: "user",
-            content: prompt
+            content: prompt.trim()
           }
-        ]
+        ],
+        max_tokens: 4000,
+        temperature: 0.7,
+        top_p: 0.9,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.5
       }, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`
-        }
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://your-site.com',
+          'X-Title': 'Crypto Market Analysis'
+        },
+        timeout: 60000
       })
 
-      const markdownContent = response.data.choices[0].message.content
+      console.log('OpenRouter API response received')
+      console.log('Response status:', response.status)
+      console.log('Response headers:', response.headers)
 
-      // Procesar el contenido para añadir clases
+      if (!response.data?.choices?.[0]?.message?.content) {
+        console.error('Invalid response structure:', JSON.stringify(response.data, null, 2))
+        throw new Error('Failed to generate article content: Invalid API response')
+      }
+
+      const markdownContent = response.data.choices[0].message.content.trim()
+      console.log('Generated content length:', markdownContent.length)
+
+      if (!markdownContent || markdownContent.length < 100) {
+        console.error('Generated content is too short:', markdownContent.length)
+        throw new Error('Generated content is invalid or too short')
+      }
+
+      console.log('Processing markdown content...')
       let processedContent = markdownContent
         // Ensure title is correct and formatted
         .replace(/^.*?Crypto Market Analysis: Trends, News Impact, and Technical Insights.*?\n/m, '<h1 class="text-3xl font-bold mb-6">Crypto Market Analysis: Trends, News Impact, and Technical Insights</h1>\n')
@@ -225,18 +239,20 @@ Please use ALL of this data to create a comprehensive analysis that connects mar
         // Remove any remaining subtitle class references
         .replace(/<div class="subtitle">.*?<\/div>/g, '')
 
-      // Convert markdown to HTML with specific options
+      console.log('Converting to HTML...')
       const htmlContent = await marked(processedContent, {
         gfm: true,
         breaks: true
       })
 
+      console.log('Article generation completed successfully')
       return {
         markdown: markdownContent,
-        html: htmlContent
+        html: htmlContent,
       }
-    } catch (error) {
-      console.error('Error generating article:', error)
+    } catch (error: unknown) {
+      console.error('Error in article generation:', error)
+      console.error('Error details:', error instanceof Error ? error.message : 'Unknown error')
       throw error
     }
   }

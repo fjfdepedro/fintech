@@ -3,6 +3,13 @@ import type { MarketData } from '.prisma/client'
 import axiosRetry from 'axios-retry'
 import prisma from '../prisma'
 
+// Añadir tipos explícitos para el error
+type ApiError = {
+  response?: {
+    status: number;
+  };
+};
+
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3'
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY
 
@@ -18,7 +25,7 @@ const coingeckoAxios = axios.create({
 axiosRetry(coingeckoAxios, {
   retries: 3,
   retryDelay: (retryCount) => retryCount * 1000,
-  retryCondition: (error) => error.response?.status === 429,
+  retryCondition: (error: ApiError) => error.response?.status === 429,
 })
 
 // Helper function to get current UTC timestamp
@@ -105,6 +112,238 @@ const processInChunks = async <T>(
   }
   return results;
 };
+
+async function getCachedData<T>(
+  key: string,
+  fetchFn: () => Promise<T>,
+  ttl: number = 3600
+): Promise<T | null> {
+  try {
+    // Intentar obtener de la base de datos primero
+    const cached = await prisma.cache.findUnique({
+      where: { key }
+    })
+
+    // Si existe y no ha expirado, devolver datos cacheados
+    if (cached && Date.now() - cached.timestamp.getTime() < ttl * 1000) {
+      return JSON.parse(cached.data) as T
+    }
+
+    // Si no existe o expiró, obtener nuevos datos
+    const data = await fetchFn()
+    
+    // Guardar en caché
+    await prisma.cache.upsert({
+      where: { key },
+      create: {
+        key,
+        data: JSON.stringify(data),
+        timestamp: new Date()
+      },
+      update: {
+        data: JSON.stringify(data),
+        timestamp: new Date()
+      }
+    })
+
+    return data
+  } catch (error) {
+    console.error('Error in getCachedData:', error)
+    
+    // Si hay error pero tenemos caché (aunque expirado), lo usamos como fallback
+    const cached = await prisma.cache.findUnique({
+      where: { key }
+    })
+    if (cached) {
+      console.log('Using expired cache as fallback')
+      return JSON.parse(cached.data) as T
+    }
+    
+    return null
+  }
+}
+
+// Tipos para las respuestas de las APIs
+interface CoinGeckoResponse {
+  data: any;
+}
+
+interface MessariResponse {
+  data: {
+    market_data?: {
+      volume_last_24h?: number;
+      real_volume_last_24h?: number;
+    };
+    roi_data?: {
+      percent_change_last_1_week?: number;
+      percent_change_last_1_month?: number;
+    };
+    mining_stats?: Record<string, number>;
+    developer_activity?: Record<string, number>;
+    supply?: {
+      liquid?: number;
+      circulating?: number;
+      total?: number;
+    };
+  };
+}
+
+interface DefiLlamaResponse {
+  tvl: number;
+  chainTvls: Record<string, number>;
+  currentChainTvls: Record<string, number>;
+  tokens: Record<string, any>;
+}
+
+// Mapa de símbolos a IDs de CoinGecko
+const COINGECKO_SYMBOL_TO_ID: Record<string, string> = {
+  'sol': 'solana',
+  'btc': 'bitcoin',
+  'eth': 'ethereum',
+  'bnb': 'binancecoin',
+  'xrp': 'ripple',
+  'ada': 'cardano',
+  'doge': 'dogecoin',
+  'dot': 'polkadot',
+  'matic': 'polygon',
+  'link': 'chainlink',
+  'avax': 'avalanche-2',
+  'uni': 'uniswap',
+  'xlm': 'stellar',
+  'atom': 'cosmos',
+  'near': 'near',
+  'apt': 'aptos',
+  'sui': 'sui',
+  'ton': 'the-open-network',
+  'trx': 'tron',
+  'wbtc': 'wrapped-bitcoin',
+  'steth': 'staked-ether',
+  'leo': 'leo-token',
+  'shib': 'shiba-inu',
+  'ltc': 'litecoin',
+  'bch': 'bitcoin-cash',
+  'etc': 'ethereum-classic',
+  'hbar': 'hedera-hashgraph',
+  'fil': 'filecoin',
+  'icp': 'internet-computer',
+  'arb': 'arbitrum',
+  'op': 'optimism',
+  'cro': 'crypto-com-chain',
+  'algo': 'algorand',
+  'vet': 'vechain',
+  'aave': 'aave',
+  'eos': 'eos',
+  'xtz': 'tezos',
+  'qnt': 'quant-network',
+  'egld': 'elrond-erd-2',
+  'paxg': 'pax-gold',
+  'theta': 'theta-token',
+  'ftm': 'fantom',
+  'rune': 'thorchain',
+  'cake': 'pancakeswap-token',
+  'crv': 'curve-dao-token',
+  'rndr': 'render-token',
+  'sei': 'sei-network',
+  'floki': 'floki',
+  'wif': 'dogwifhat',
+  'hype': 'hyperliquid',
+  'ondo': 'ondo-finance',
+  'bera': 'berachain',
+  'ip': 'story-protocol',
+  'solx': 'solaxy',
+  'tics': 'qubetics'
+}
+
+// Cache de IDs de CoinGecko para evitar recrear el mapping
+const coingeckoIdCache = new Map<string, string>()
+
+async function getCoingeckoId(symbol: string): Promise<string> {
+  const normalizedSymbol = symbol.toLowerCase()
+  
+  // Check cache first
+  const cachedId = coingeckoIdCache.get(normalizedSymbol)
+  if (cachedId) return cachedId
+
+  // Get from mapping or use normalized symbol
+  const id = COINGECKO_SYMBOL_TO_ID[normalizedSymbol] || normalizedSymbol
+  coingeckoIdCache.set(normalizedSymbol, id)
+  return id
+}
+
+// Mapa de símbolos comunes a sus slugs en Messari
+const MESSARI_SYMBOL_TO_SLUG: Record<string, string> = {
+  'btc': 'bitcoin',
+  'eth': 'ethereum',
+  'bnb': 'binance',
+  'sol': 'solana',
+  'xrp': 'xrp',
+  'ada': 'cardano',
+  'doge': 'dogecoin',
+  'dot': 'polkadot',
+  'matic': 'polygon',
+  'link': 'chainlink',
+  'avax': 'avalanche',
+  'uni': 'uniswap',
+  'xlm': 'stellar',
+  'atom': 'cosmos',
+  'near': 'near-protocol',
+  'apt': 'aptos',
+  'sui': 'sui',
+  'ton': 'the-open-network',
+  'trx': 'tron',
+  'wbtc': 'wrapped-bitcoin',
+  'steth': 'lido-staked-ether',
+  'leo': 'leo-token',
+  'shib': 'shiba-inu',
+  'ltc': 'litecoin',
+  'bch': 'bitcoin-cash',
+  'etc': 'ethereum-classic',
+  'hbar': 'hedera',
+  'fil': 'filecoin',
+  'icp': 'internet-computer',
+  'arb': 'arbitrum',
+  'op': 'optimism',
+  'cro': 'cronos',
+  'algo': 'algorand',
+  'vet': 'vechain',
+  'aave': 'aave',
+  'eos': 'eos',
+  'xtz': 'tezos',
+  'qnt': 'quant-network',
+  'egld': 'elrond-erd-2',
+  'paxg': 'pax-gold',
+  'theta': 'theta-token',
+  'ftm': 'fantom',
+  'rune': 'thorchain',
+  'cake': 'pancakeswap-token',
+  'crv': 'curve-dao-token',
+  'rndr': 'render-token',
+  'sei': 'sei-network',
+  'floki': 'floki',
+  'wif': 'dogwifhat',
+  'hype': 'hyperliquid',
+  'ondo': 'ondo-finance',
+  'bera': 'berachain',
+  'ip': 'story-protocol',
+  'solx': 'solaxy',
+  'tics': 'qubetics'
+}
+
+// Cache de slugs para evitar recrear el mapping
+const slugCache = new Map<string, string>()
+
+async function getMessariSlug(coinId: string): Promise<string> {
+  const normalizedId = coinId.toLowerCase()
+  
+  // Check cache first
+  const cachedSlug = slugCache.get(normalizedId)
+  if (cachedSlug) return cachedSlug
+
+  // Get from mapping or use normalized id
+  const slug = MESSARI_SYMBOL_TO_SLUG[normalizedId] || normalizedId
+  slugCache.set(normalizedId, slug)
+  return slug
+}
 
 export const cryptoAPI = {
   async getTopCryptos(): Promise<MarketData[]> {
@@ -243,68 +482,17 @@ export const cryptoAPI = {
     }
   },
 
-  async getMarketChart(coinId: string, days: number = 7) {
-    try {
-      const response = await coingeckoAxios.get(
-        `/coins/${coinId}/market_chart`,
-        {
-          params: {
-            vs_currency: 'usd',
-            days: days
-          }
-        }
-      )
-
-      return response.data
-    } catch (error) {
-      console.error(`Error obteniendo el gráfico de mercado para ${coinId}:`, error)
-      throw error
-    }
-  },
-
-  async getTrendingCoins() {
-    try {
-      const response = await coingeckoAxios.get('/search/trending')
-      return response.data.coins
-    } catch (error) {
-      console.error('Error fetching trending coins:', error)
-      throw error
-    }
-  },
-
   async getGlobalData() {
     try {
-      const response = await coingeckoAxios.get('/global')
+      const response = await coingeckoAxios.get<CoinGeckoResponse>('/global')
       return response.data.data
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching global data:', error)
       throw error
     }
   },
 
-  async saveCryptoData(data: MarketData) {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      const response = await axios.post(`${baseUrl}/api/crypto`, data)
-
-      return response.data
-    } catch (error) {
-      console.error('Error saving crypto data:', error)
-      throw error
-    }
-  },
-
-  async getLastUpdateTime(): Promise<Date | null> {
-    try {
-      const response = await axios.get('/api/crypto/last-update')
-      return response.data.lastUpdate ? new Date(response.data.lastUpdate) : null
-    } catch (error) {
-      console.error('Error getting last update time:', error)
-      return null
-    }
-  },
-
-  getHistoricalData: async (symbol: string) => {
+  async getHistoricalData(symbol: string) {
     try {
       const historicalData = await prisma.marketData.findMany({
         where: {
@@ -342,17 +530,218 @@ export const cryptoAPI = {
     }
   },
 
-  // Function to get historical data for multiple symbols
-  getHistoricalDataBatch: async (symbols: string[]) => {
+  async getCryptoDetail(symbol: string) {
     try {
-      // Process symbols in chunks of 5 to avoid overwhelming the database
-      return await processInChunks<string>(symbols, 5, async (symbol: string) => {
-        const data = await cryptoAPI.getHistoricalData(symbol);
-        return { symbol, data };
-      });
+      const coinId = await getCoingeckoId(symbol)
+      const response = await coingeckoAxios.get(`/coins/${coinId}`, {
+        params: {
+          localization: false,
+          tickers: true,
+          market_data: true,
+          community_data: true,
+          developer_data: true,
+          sparkline: true
+        },
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=59'
+        }
+      })
+      return response.data
     } catch (error) {
-      console.error('Error in batch historical data fetch:', error);
-      return [];
+      console.error('Error fetching crypto detail:', error)
+      throw error
+    }
+  },
+
+  async getOnChainData(symbol: string) {
+    try {
+      const coinId = await getCoingeckoId(symbol)
+      const response = await coingeckoAxios.get(`/coins/${coinId}/market_chart`, {
+        params: {
+          vs_currency: 'usd',
+          days: 30,
+          interval: 'daily'
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching on-chain data:', error)
+      throw error
+    }
+  },
+
+  async getExchangesList(symbol: string) {
+    try {
+      const coinId = await getCoingeckoId(symbol)
+      const response = await coingeckoAxios.get(`/coins/${coinId}/tickers`, {
+        params: {
+          include_exchange_logo: true,
+          order: 'volume_desc'
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching exchanges list:', error)
+      throw error
+    }
+  },
+
+  async getMessariMetrics(coinId: string) {
+    const slug = await getMessariSlug(coinId)
+    const CACHE_KEY = `messari-metrics-${slug}`
+    const ONE_DAY = 86400 // 24 horas en segundos
+
+    return getCachedData(
+      CACHE_KEY,
+      async () => {
+        try {
+          const response = await axios.get(
+            `https://data.messari.io/api/v1/assets/${slug}/metrics`,
+            {
+              headers: {
+                'x-messari-api-key': process.env.MESSARI_API_KEY
+              }
+            }
+          )
+
+          const { data } = response.data
+          return {
+            market_data: {
+              volume_last_24h: data.market_data?.volume_last_24h,
+              real_volume_last_24h: data.market_data?.real_volume_last_24h,
+            },
+            roi_data: {
+              percent_change_last_1_week: data.roi_data?.percent_change_last_1_week,
+              percent_change_last_1_month: data.roi_data?.percent_change_last_1_month,
+            },
+            mining_stats: data.mining_stats,
+            developer_activity: data.developer_activity,
+            supply: {
+              liquid: data.supply?.liquid,
+              circulating: data.supply?.circulating,
+              total: data.supply?.total
+            }
+          }
+        } catch (error) {
+          if (axios.isAxiosError(error)) {
+            // Rate limit error - return null to trigger cache fallback
+            if (error.response?.status === 429) {
+              console.error('Messari rate limit reached')
+              return null
+            }
+            // Invalid slug/asset not found
+            if (error.response?.status === 404) {
+              console.error(`Messari asset not found: ${slug}`)
+              return null
+            }
+          }
+          console.error('Error fetching Messari metrics:', error)
+          return null
+        }
+      },
+      ONE_DAY
+    )
+  },
+
+  async getDefiProtocolData(symbol: string) {
+    // Mapa de símbolos a identificadores de DeFiLlama
+    const symbolToProtocol: Record<string, string> = {
+      'uni': 'uniswap',
+      'aave': 'aave',
+      'cake': 'pancakeswap',
+      'crv': 'curve',
+      'comp': 'compound',
+      'mkr': 'maker',
+      'sushi': 'sushiswap',
+      'bal': 'balancer',
+      'snx': 'synthetix',
+      'yfi': 'yearn-finance',
+      'link': 'chainlink',
+      'grt': 'the-graph',
+      'ren': 'ren',
+      '1inch': '1inch',
+      'alpha': 'alpha-finance',
+      'bnt': 'bancor',
+      'perp': 'perpetual-protocol',
+      'dydx': 'dydx',
+      'rook': 'rook',
+      'badger': 'badger-dao',
+      'rari': 'rari-capital',
+      'fei': 'fei-protocol',
+      'tribe': 'tribe',
+      'rai': 'rai',
+      'ohm': 'olympus',
+      'spell': 'abracadabra',
+      'mim': 'magic-internet-money',
+      'time': 'wonderland',
+      'wmemo': 'wrapped-memo',
+      'sps': 'splinterlands',
+      'slp': 'smooth-love-potion',
+      'quick': 'quickswap',
+      'joe': 'trader-joe',
+      'magic': 'magic',
+      'gmx': 'gmx',
+      'velo': 'velodrome',
+      'angle': 'angle',
+      'pendle': 'pendle',
+      'vsta': 'vesta-finance',
+      'rdnt': 'radiant-capital',
+      'thales': 'thales'
+    }
+
+    const normalizedSymbol = symbol.toLowerCase()
+    const protocolId = symbolToProtocol[normalizedSymbol]
+
+    // Si no es un protocolo DeFi conocido, retornamos un objeto con valores por defecto
+    if (!protocolId) {
+      return {
+        isDefiProtocol: false,
+        tvl: 0,
+        chainTvls: {},
+        currentChainTvls: {},
+        tokens: {}
+      }
+    }
+
+    try {
+      const CACHE_KEY = `defillama-protocol-${protocolId}`
+      const ONE_DAY = 86400 // 24 horas
+
+      const data = await getCachedData(
+        CACHE_KEY,
+        async () => {
+          const response = await axios.get(`https://api.llama.fi/protocol/${protocolId}`)
+          if (!response.data || response.data === 'Protocol not found') {
+            return null
+          }
+          
+          return {
+            isDefiProtocol: true,
+            tvl: response.data.tvl || 0,
+            chainTvls: response.data.chainTvls || {},
+            currentChainTvls: response.data.currentChainTvls || {},
+            tokens: response.data.tokens || {}
+          }
+        },
+        ONE_DAY
+      )
+
+      return data || {
+        isDefiProtocol: false,
+        tvl: 0,
+        chainTvls: {},
+        currentChainTvls: {},
+        tokens: {}
+      }
+    } catch (error) {
+      console.error('Error fetching DeFi data:', error)
+      return {
+        isDefiProtocol: false,
+        tvl: 0,
+        chainTvls: {},
+        currentChainTvls: {},
+        tokens: {}
+      }
     }
   }
 }

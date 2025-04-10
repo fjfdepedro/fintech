@@ -24,22 +24,64 @@ async function updateArticleData() {
     // 2. Get news
     const newsArticles = await newsAPI.getCryptoNews()
     
-    // 3. Generate article using articleAPI
-    const content = await articleAPI.generateArticle(cryptoData, newsArticles)
-    
-    // 4. Save the article
-    const result = await prisma.article.create({
-      data: {
-        content: content.html,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    })
+    try {
+      // 3. Try to generate new article
+      const content = await articleAPI.generateArticle(cryptoData, newsArticles)
+      
+      // 4. Save the new article
+      const result = await prisma.article.create({
+        data: {
+          content: content.html,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      })
 
-    console.log('Article updated:', result.id)
-    return result
+      console.log('New article created:', result.id)
+      return {
+        article: result,
+        status: 'generated' as const,
+        source: 'new'
+      }
+    } catch (generationError) {
+      console.warn('Failed to generate new article:', generationError)
+      console.log('Falling back to most recent article...')
+
+      // 5. Fallback: Get most recent article from database
+      const mostRecentArticle = await prisma.article.findFirst({
+        orderBy: {
+          createdAt: 'desc'
+        },
+        where: {
+          content: {
+            not: ''
+          }
+        }
+      })
+
+      if (!mostRecentArticle) {
+        throw new Error('No fallback article available in database')
+      }
+
+      // 6. Create new article entry with existing content but updated timestamp
+      const result = await prisma.article.create({
+        data: {
+          content: mostRecentArticle.content,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      })
+
+      console.log('Created article from fallback data:', result.id)
+      return {
+        article: result,
+        status: 'fallback' as const,
+        source: 'existing',
+        originalArticleId: mostRecentArticle.id
+      }
+    }
   } catch (error) {
-    console.error('Error generating article:', error)
+    console.error('Error in article update process:', error)
     throw error
   }
 }
@@ -57,7 +99,7 @@ export async function GET(request: Request) {
     const result = await updateArticleData()
     return NextResponse.json({ 
       success: true,
-      articleId: result.id
+      articleId: result.article.id
     })
   } catch (error) {
     console.error('Error in automatic article update:', error)
@@ -78,10 +120,16 @@ export async function POST(request: Request) {
     const result = await updateArticleData()
     return NextResponse.json({ 
       success: true,
-      articleId: result.id
+      articleId: result.article.id,
+      status: result.status,
+      source: result.source,
+      ...(result.status === 'fallback' && { originalArticleId: result.originalArticleId })
     })
   } catch (error) {
     console.error('Error in manual article update:', error)
-    return NextResponse.json({ error: 'Article update failed' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Article update failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

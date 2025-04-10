@@ -14,6 +14,7 @@ import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
 import { formatDate } from "@/lib/utils/date"
 import Image from "next/image"
 import { useState } from "react"
+import Link from "next/link"
 
 interface MarketData {
   symbol: string
@@ -24,6 +25,7 @@ interface MarketData {
   timestamp: Date
   logo_url?: string | null
   market_cap: number
+  id: string
 }
 
 type SortField = 'name' | 'price' | 'change' | 'market_cap' | 'volume' | 'timestamp'
@@ -176,29 +178,32 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
               </TableRow>
             ))
           ) : (
-            sortedData.map((item) => {
+            sortedData.map((item, index) => {
               return (
                 <TableRow key={`${item.symbol}-${item.timestamp}`}>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <Link 
+                      href={`/crypto/${item.symbol.toLowerCase()}`} 
+                      className="flex items-center gap-2 hover:text-primary transition-colors"
+                    >
                       {item.logo_url ? (
-                        <div className="relative h-6 w-6 rounded-full overflow-hidden">
-                          <Image
-                            src={item.logo_url}
-                            alt={`${item.name} logo`}
-                            className="object-contain"
-                            width={24}
-                            height={24}
-                          />
-                        </div>
+                        <Image
+                          src={item.logo_url}
+                          alt={`${item.name} logo`}
+                          className="object-contain"
+                          width={24}
+                          height={24}
+                        />
                       ) : (
                         <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
                           <span className="text-xs font-medium">{item.symbol?.[0]}</span>
                         </div>
                       )}
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-muted-foreground text-sm">({item.symbol})</span>
-                    </div>
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-xs text-muted-foreground">{item.symbol}</div>
+                      </div>
+                    </Link>
                   </TableCell>
                   <TableCell className="text-right text-base font-medium">${item.price.toFixed(2)}</TableCell>
                   <TableCell className={cn(
