@@ -9,10 +9,9 @@ import Image from 'next/image'
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 
-// Cache configuration
-export const revalidate = 3600 // Revalidate every hour (3600 seconds)
-export const fetchCache = 'force-cache'
-export const dynamic = 'force-dynamic'
+// Force static generation with ISR
+export const dynamic = 'force-static'
+export const revalidate = 3600 // Revalidate every hour
 
 interface PageProps {
   params: {
