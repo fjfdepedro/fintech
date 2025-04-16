@@ -9,7 +9,20 @@ const VERCEL_CACHE_TTL = 60 * 5 // 5 minutes
 // Cache for negative results
 const negativeCache = new Map<string, { timestamp: number, message: string }>()
 
-export const getBasicCryptoData = cache(async (symbol: string) => {
+interface MarketDataResponse {
+  id?: string
+  symbol?: string
+  name?: string | null
+  price?: number
+  change?: number
+  volume?: string
+  market_cap?: number
+  timestamp?: Date
+  logo_url?: string | null
+  error?: string
+}
+
+export const getBasicCryptoData = cache(async (symbol: string): Promise<MarketDataResponse> => {
   try {
     // Check negative cache first
     const cachedNegative = negativeCache.get(symbol.toUpperCase())

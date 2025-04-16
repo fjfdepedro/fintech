@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import prisma from '@/lib/prisma'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { getBasicCryptoData } from '@/lib/services/crypto-detail'
 
 // Force static generation with ISR
 export const dynamic = 'force-static'
@@ -62,6 +63,19 @@ interface MessariData {
   };
 }
 
+interface MarketDataResponse {
+  id: string
+  symbol: string
+  name: string | null
+  price: number
+  change: number
+  volume: string
+  market_cap: number
+  timestamp: Date
+  logo_url: string | null
+  error?: string
+}
+
 // Loading component
 function LoadingState() {
   return (
@@ -99,22 +113,9 @@ function LoadingState() {
 export default async function CryptoDetailPage({ params }: PageProps) {
   try {
     const coinId = params.symbol.toLowerCase()
+    const marketData = await getBasicCryptoData(params.symbol) as MarketDataResponse
 
-    // First try to get basic market data to show something quickly
-    const marketData = await prisma.marketData.findFirst({
-      where: {
-        symbol: params.symbol.toUpperCase()
-      },
-      orderBy: {
-        timestamp: 'desc'
-      }
-    })
-
-    if (!marketData) {
-      return <LoadingState />
-    }
-
-    if ('error' in marketData) {
+    if (marketData.error) {
       return (
         <div className="container mx-auto p-6">
           <Alert variant="destructive">
@@ -126,6 +127,10 @@ export default async function CryptoDetailPage({ params }: PageProps) {
           </Alert>
         </div>
       )
+    }
+
+    if (!marketData.symbol || !marketData.price || !marketData.change) {
+      return <LoadingState />
     }
 
     // Then fetch detailed data
