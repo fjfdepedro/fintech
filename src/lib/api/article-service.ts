@@ -79,26 +79,84 @@ Price: $${typeof coin.price === 'number' ? coin.price.toFixed(2) : 'N/A'}
 
       console.log('Constructing final prompt...')
 
-      const prompt = `Write a crypto market analysis article focusing on how recent news impacts cryptocurrency prices. Title: "Crypto Market Analysis: News Impact and Market Movements"
+      const prompt = `Write a comprehensive crypto market analysis article focusing on how recent news impacts cryptocurrency prices. Title: "Crypto Market Analysis: News Impact and Market Movements"
 
-IMPORTANT: This article MUST be written in English ONLY. Do not include any non-English text or characters.
+CRITICAL REQUIREMENTS:
+1. This article MUST be written in English ONLY. No exceptions.
+2. Never use any non-English characters, symbols, or text.
+3. Never use special characters or symbols to represent numbers or percentages.
+4. Use proper English formatting and punctuation.
+5. If you cannot provide a value, use "N/A" instead of symbols or placeholders.
+6. Format all numbers and percentages in standard English format (e.g., $50,000, 5.2%, etc.).
+7. Use clear section headers and subheaders.
+8. Break long paragraphs into shorter ones for better readability.
+9. Use bullet points and numbered lists where appropriate.
 
-Analyze the provided news articles and their impact on cryptocurrency prices. For each news story:
+STRUCTURE REQUIREMENTS:
+1. Title and Introduction
+   - Clear, descriptive title
+   - Brief market overview
+   - Key points to be covered
 
-1. Identify the cryptocurrencies mentioned and their current prices
-2. Summarize the key points from the news
-3. Explain how the news might have affected their price movements
+2. Individual News Analysis (for each major story)
+   - Clear header for each news item
+   - Cryptocurrencies affected (with current prices)
+   - Key points in bullet points
+   - Impact analysis with quantitative data
+   - Historical context if relevant
+   - Connection to broader market trends
 
-Structure the analysis in these sections:
-- Individual News Analysis (for each major story)
-- Market Overview (grouping related stories by category)
-- Conclusion (summarizing key impacts)
+3. Market Overview
+   - Categorized analysis (Regulatory, Technical, Market Sentiment)
+   - Data-driven insights
+   - Trend analysis
+   - Comparative analysis with historical events
 
-Remember:
-- Use exact prices and percentages from the market data
-- Focus on connecting news events to price movements
-- No predictions or trading advice
-- Write in English ONLY
+4. Technical Analysis
+   - Price movements and patterns
+   - Volume analysis
+   - Support and resistance levels
+   - Market indicators
+
+5. Market Sentiment
+   - Social media trends
+   - Trading volume analysis
+   - Institutional activity
+   - Retail investor behavior
+
+6. Conclusion
+   - Summary of key impacts
+   - Future outlook
+   - Risk factors to watch
+   - Key takeaways in bullet points
+
+CONTENT REQUIREMENTS:
+1. For each cryptocurrency mentioned:
+   - Current price
+   - 24h price change
+   - Trading volume
+   - Market cap
+   - Historical context
+
+2. For each news event:
+   - Quantitative impact on prices
+   - Volume changes
+   - Market cap changes
+   - Historical precedents
+   - Similar past events and their outcomes
+
+3. Market Analysis:
+   - Correlation between events
+   - Chain reactions
+   - Sector-wide impacts
+   - Long-term implications
+
+4. Data Presentation:
+   - Use tables for price comparisons
+   - Use bullet points for key facts
+   - Use numbered lists for sequential events
+   - Include percentage changes
+   - Show volume and market cap data
 
 Here is the data to analyze:
 
@@ -132,18 +190,23 @@ ${generalNewsSection}`
 
       console.log('Sending request to OpenRouter API...')
       const response = await axios.post(OPENROUTER_URL, {
-        model: "qwen/qwq-32b:free",
+        model: "mistralai/mistral-small-3.1-24b-instruct:free",
         messages: [
+          {
+            role: "system",
+            content: "You are a professional cryptocurrency market analyst. Your primary rule is to write EXCLUSIVELY in English. Never use any other language, characters, or symbols. If you cannot provide a value, use 'N/A'. Format all numbers and percentages in standard English format."
+          },
           {
             role: "user",
             content: prompt.trim()
           }
         ],
         max_tokens: 4000,
-        temperature: 0.7,
+        temperature: 0.3,
         top_p: 0.9,
         frequency_penalty: 0.5,
-        presence_penalty: 0.5
+        presence_penalty: 0.5,
+        stop: ["</s>", "```"]
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -165,6 +228,20 @@ ${generalNewsSection}`
 
       const markdownContent = response.data.choices[0].message.content.trim()
       console.log('Generated content length:', markdownContent.length)
+
+      // Validate content for non-English characters and symbols
+      const nonEnglishRegex = /[^\x00-\x7F]/g
+      const problematicSymbolsRegex = /[{}[\]\\]/g
+      
+      if (nonEnglishRegex.test(markdownContent)) {
+        console.error('Content contains non-English characters')
+        throw new Error('Generated content contains non-English characters')
+      }
+
+      if (problematicSymbolsRegex.test(markdownContent)) {
+        console.error('Content contains problematic symbols')
+        throw new Error('Generated content contains problematic symbols')
+      }
 
       if (!markdownContent || markdownContent.length < 100) {
         console.error('Generated content is too short:', markdownContent.length)

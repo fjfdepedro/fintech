@@ -1,6 +1,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["multiSchema"]
+  output          = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -142,6 +143,39 @@ model ExchangeData {
   symbol    String
   tickers   Json?
   timestamp DateTime @default(now())
+
+  @@index([symbol, timestamp])
+  @@schema("public")
+}
+
+model OnChainData {
+  id         String   @id @default(cuid())
+  symbol     String
+  data       Json     // Almacenará prices, market_caps, total_volumes
+  timestamp  DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([symbol, timestamp])
+  @@schema("public")
+}
+
+model MessariMetrics {
+  id         String   @id @default(cuid())
+  symbol     String
+  data       Json     // Almacenará volume_last_24h, roi_data, mining_stats, etc.
+  timestamp  DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([symbol, timestamp])
+  @@schema("public")
+}
+
+model DefiProtocolData {
+  id         String   @id @default(cuid())
+  symbol     String
+  data       Json     // Almacenará tvl, chainTvls, tokens, etc.
+  timestamp  DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   @@index([symbol, timestamp])
   @@schema("public")

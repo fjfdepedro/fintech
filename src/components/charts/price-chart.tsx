@@ -40,7 +40,7 @@ const getColorForSymbol = (symbol: string) => {
 }
 
 export function PriceChart({ 
-  data, 
+  data = [], 
   title, 
   symbol, 
   showAxes = true,
@@ -50,9 +50,9 @@ export function PriceChart({
   const color = getColorForSymbol(symbol)
 
   // Solo procesar datos si existen y son válidos
-  const validData = data
+  const validData = Array.isArray(data) ? data
     .filter(point => point && point.value && !isNaN(point.value))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) : []
   
   if (validData.length === 0) {
     return (

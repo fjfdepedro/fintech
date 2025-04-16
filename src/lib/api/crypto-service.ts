@@ -1,7 +1,27 @@
 import axios from 'axios'
 import type { MarketData } from '.prisma/client'
 import axiosRetry from 'axios-retry'
-import prisma from '../prisma'
+import { PrismaClient, Prisma } from '@prisma/client'
+import prisma from '@/lib/prisma'
+import { RawQueryResult } from '@/types/database'
+import { v4 as uuidv4 } from 'uuid'
+
+// Interfaces locales para los modelos
+interface MessariMetricsModel {
+  id: string
+  symbol: string
+  data: any
+  timestamp: Date
+  updated_at: Date
+}
+
+interface DefiProtocolDataModel {
+  id: string
+  symbol: string
+  data: any
+  timestamp: Date
+  updated_at: Date
+}
 
 // Añadir tipos explícitos para el error
 type ApiError = {
@@ -165,7 +185,13 @@ async function getCachedData<T>(
 
 // Tipos para las respuestas de las APIs
 interface CoinGeckoResponse {
-  data: any;
+  data: {
+    active_cryptocurrencies: number;
+    total_market_cap: Record<string, number>;
+    total_volume: Record<string, number>;
+    market_cap_percentage: Record<string, number>;
+    active_exchanges: number;
+  }
 }
 
 interface MessariResponse {
@@ -345,6 +371,22 @@ async function getMessariSlug(coinId: string): Promise<string> {
   return slug
 }
 
+interface MessariMetricsRecord {
+  id: string
+  symbol: string
+  data: any
+  timestamp: Date
+  updated_at: Date
+}
+
+interface DefiProtocolDataRecord {
+  id: string
+  symbol: string
+  data: any
+  timestamp: Date
+  updated_at: Date
+}
+
 export const cryptoAPI = {
   async getTopCryptos(): Promise<MarketData[]> {
     try {
@@ -480,10 +522,81 @@ export const cryptoAPI = {
 
   async getGlobalData() {
     try {
+      // Buscar datos existentes no más viejos de 1 hora
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const existingData = await prisma.cryptoMarketMetadata.findFirst({
+        where: {
+          timestamp: {
+            gt: oneHourAgo
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      // Si encontramos datos recientes, los devolvemos
+      if (existingData) {
+        return {
+          data: {
+            total_market_cap: { usd: existingData.total_market_cap },
+            total_volume: { usd: existingData.total_volume_24h },
+            market_cap_percentage: {
+              btc: existingData.btc_dominance,
+              eth: existingData.eth_dominance
+            },
+            active_cryptocurrencies: existingData.active_cryptos,
+            active_exchanges: existingData.active_exchanges
+          }
+        }
+      }
+
+      // Si no hay datos o son viejos, hacemos la petición a la API
       const response = await coingeckoAxios.get<CoinGeckoResponse>('/global')
-      return response.data.data
+      const globalData = response.data.data
+
+      // Guardamos los nuevos datos en la base de datos
+      await prisma.cryptoMarketMetadata.create({
+        data: {
+          id: `global-${Date.now()}`, // Generamos un ID único
+          symbol: 'GLOBAL',
+          total_market_cap: globalData.total_market_cap?.usd || 0,
+          total_volume_24h: globalData.total_volume?.usd || 0,
+          btc_dominance: globalData.market_cap_percentage?.btc || 0,
+          eth_dominance: globalData.market_cap_percentage?.eth || 0,
+          active_cryptos: globalData.active_cryptocurrencies || 0,
+          active_exchanges: globalData.active_exchanges || 0,
+          timestamp: new Date(),
+          updated_at: new Date()
+        }
+      })
+
+      return response.data
     } catch (error: unknown) {
       console.error('Error fetching global data:', error)
+      
+      // En caso de error, intentamos devolver los últimos datos disponibles
+      const lastData = await prisma.cryptoMarketMetadata.findFirst({
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      if (lastData) {
+        return {
+          data: {
+            total_market_cap: { usd: lastData.total_market_cap },
+            total_volume: { usd: lastData.total_volume_24h },
+            market_cap_percentage: {
+              btc: lastData.btc_dominance,
+              eth: lastData.eth_dominance
+            },
+            active_cryptocurrencies: lastData.active_cryptos,
+            active_exchanges: lastData.active_exchanges
+          }
+        }
+      }
+
       throw error
     }
   },
@@ -529,6 +642,27 @@ export const cryptoAPI = {
   async getCryptoDetail(symbol: string) {
     try {
       const coinId = await getCoingeckoId(symbol)
+
+      // Buscar datos existentes no más viejos de 1 hora
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const existingData = await prisma.cryptoDetails.findFirst({
+        where: {
+          symbol: symbol.toUpperCase(),
+          timestamp: {
+            gt: oneHourAgo
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      // Si encontramos datos recientes, los devolvemos
+      if (existingData?.data) {
+        return existingData.data
+      }
+
+      // Si no hay datos o son viejos, hacemos la petición a la API
       const response = await coingeckoAxios.get(`/coins/${coinId}`, {
         params: {
           localization: false,
@@ -537,14 +671,37 @@ export const cryptoAPI = {
           community_data: true,
           developer_data: true,
           sparkline: true
-        },
-        headers: {
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=59'
         }
       })
+
+      // Guardamos los nuevos datos en la base de datos
+      await prisma.cryptoDetails.create({
+        data: {
+          symbol: symbol.toUpperCase(),
+          data: response.data,
+          timestamp: new Date(),
+          updated_at: new Date()
+        }
+      })
+
       return response.data
     } catch (error) {
       console.error('Error fetching crypto detail:', error)
+
+      // En caso de error, intentamos devolver los últimos datos disponibles
+      const lastData = await prisma.cryptoDetails.findFirst({
+        where: {
+          symbol: symbol.toUpperCase()
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      if (lastData?.data) {
+        return lastData.data
+      }
+
       throw error
     }
   },
@@ -552,6 +709,27 @@ export const cryptoAPI = {
   async getOnChainData(symbol: string) {
     try {
       const coinId = await getCoingeckoId(symbol)
+
+      // Buscar datos existentes no más viejos de 1 hora
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const existingData = await prisma.onChainData.findFirst({
+        where: {
+          symbol: symbol.toUpperCase(),
+          timestamp: {
+            gt: oneHourAgo
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      // Si encontramos datos recientes, los devolvemos
+      if (existingData?.data) {
+        return existingData.data
+      }
+
+      // Si no hay datos o son viejos, hacemos la petición a la API
       const response = await coingeckoAxios.get(`/coins/${coinId}/market_chart`, {
         params: {
           vs_currency: 'usd',
@@ -559,9 +737,35 @@ export const cryptoAPI = {
           interval: 'daily'
         }
       })
+
+      // Guardamos los nuevos datos en la base de datos
+      await prisma.onChainData.create({
+        data: {
+          symbol: symbol.toUpperCase(),
+          data: response.data,
+          timestamp: new Date(),
+          updated_at: new Date()
+        }
+      })
+
       return response.data
     } catch (error) {
       console.error('Error fetching on-chain data:', error)
+      
+      // En caso de error, intentamos devolver los últimos datos disponibles
+      const lastData = await prisma.onChainData.findFirst({
+        where: {
+          symbol: symbol.toUpperCase()
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      if (lastData?.data) {
+        return lastData.data
+      }
+
       throw error
     }
   },
@@ -569,168 +773,270 @@ export const cryptoAPI = {
   async getExchangesList(symbol: string) {
     try {
       const coinId = await getCoingeckoId(symbol)
+      
+      // Buscar datos existentes no más viejos de 1 hora
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const existingData = await prisma.exchangeData.findFirst({
+        where: {
+          symbol: symbol.toUpperCase(),
+          timestamp: {
+            gt: oneHourAgo
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      // Si encontramos datos recientes, los devolvemos
+      if (existingData?.tickers) {
+        return existingData.tickers
+      }
+
+      // Si no hay datos o son viejos, hacemos la petición a la API
       const response = await coingeckoAxios.get(`/coins/${coinId}/tickers`, {
         params: {
           include_exchange_logo: true,
           order: 'volume_desc'
         }
       })
+
+      // Guardamos los nuevos datos en la base de datos
+      await prisma.exchangeData.create({
+        data: {
+          symbol: symbol.toUpperCase(),
+          tickers: response.data,
+          timestamp: new Date()
+        }
+      })
+
       return response.data
     } catch (error) {
       console.error('Error fetching exchanges list:', error)
+      
+      // En caso de error, intentamos devolver los últimos datos disponibles
+      const lastData = await prisma.exchangeData.findFirst({
+        where: {
+          symbol: symbol.toUpperCase()
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      })
+
+      if (lastData?.tickers) {
+        return lastData.tickers
+      }
+
       throw error
     }
   },
 
-  async getMessariMetrics(coinId: string) {
-    const slug = await getMessariSlug(coinId)
-    const CACHE_KEY = `messari-metrics-${slug}`
-    const ONE_DAY = 86400 // 24 horas en segundos
+  async getMessariMetrics(coinId: string): Promise<MessariMetricsRecord | null> {
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const existingData = await prisma.$queryRaw<RawQueryResult<MessariMetricsRecord[]>>`
+        SELECT * FROM "MessariMetrics"
+        WHERE symbol = ${coinId.toUpperCase()}
+        AND timestamp > ${oneHourAgo}
+        ORDER BY timestamp DESC
+        LIMIT 1
+      `
 
-    return getCachedData(
-      CACHE_KEY,
-      async () => {
-        try {
-          const response = await axios.get(
-            `https://data.messari.io/api/v1/assets/${slug}/metrics`,
-            {
-              headers: {
-                'x-messari-api-key': process.env.MESSARI_API_KEY
-              }
-            }
-          )
+      if (existingData && existingData.length > 0) {
+        return existingData[0]
+      }
 
-          const { data } = response.data
-          return {
-            market_data: {
-              volume_last_24h: data.market_data?.volume_last_24h,
-              real_volume_last_24h: data.market_data?.real_volume_last_24h,
-            },
-            roi_data: {
-              percent_change_last_1_week: data.roi_data?.percent_change_last_1_week,
-              percent_change_last_1_month: data.roi_data?.percent_change_last_1_month,
-            },
-            mining_stats: data.mining_stats,
-            developer_activity: data.developer_activity,
-            supply: {
-              liquid: data.supply?.liquid,
-              circulating: data.supply?.circulating,
-              total: data.supply?.total
-            }
+      const slug = await getMessariSlug(coinId)
+
+      // Si no hay datos o son viejos, hacemos la petición a la API
+      const response = await axios.get(
+        `https://data.messari.io/api/v1/assets/${slug}/metrics`,
+        {
+          headers: {
+            'x-messari-api-key': process.env.MESSARI_API_KEY
           }
-        } catch (error) {
-          if (axios.isAxiosError(error)) {
-            // Rate limit error - return null to trigger cache fallback
-            if (error.response?.status === 429) {
-              console.error('Messari rate limit reached')
-              return null
-            }
-            // Invalid slug/asset not found
-            if (error.response?.status === 404) {
-              console.error(`Messari asset not found: ${slug}`)
-              return null
-            }
-          }
-          console.error('Error fetching Messari metrics:', error)
-          return null
         }
-      },
-      ONE_DAY
-    )
+      )
+
+      const { data } = response.data
+      const newMetrics: MessariMetricsRecord = {
+        id: uuidv4(),
+        symbol: coinId.toUpperCase(),
+        data: {
+          market_data: {
+            volume_last_24h: data.market_data?.volume_last_24h ?? null,
+            real_volume_last_24h: data.market_data?.real_volume_last_24h ?? null,
+          },
+          roi_data: {
+            percent_change_last_1_week: data.roi_data?.percent_change_last_1_week ?? null,
+            percent_change_last_1_month: data.roi_data?.percent_change_last_1_month ?? null,
+          },
+          mining_stats: data.mining_stats ?? null,
+          developer_activity: data.developer_activity ?? null,
+          supply: {
+            liquid: data.supply?.liquid ?? null,
+            circulating: data.supply?.circulating ?? null,
+            total: data.supply?.total ?? null
+          }
+        },
+        timestamp: new Date(),
+        updated_at: new Date()
+      }
+
+      // Guardamos los nuevos datos en la base de datos
+      await prisma.$executeRaw`
+        INSERT INTO "MessariMetrics" (id, symbol, data, timestamp, updated_at)
+        VALUES (${newMetrics.id}, ${newMetrics.symbol}, ${newMetrics.data}::jsonb, ${newMetrics.timestamp}, ${newMetrics.updated_at})
+      `
+
+      return newMetrics
+    } catch (error) {
+      console.error('Error fetching Messari metrics:', error)
+      
+      // En caso de error, intentamos devolver los últimos datos disponibles
+      const lastData = await prisma.$queryRaw<MessariMetricsRecord[]>(
+        Prisma.sql`
+          SELECT * FROM "MessariMetrics"
+          WHERE symbol = ${coinId.toUpperCase()}
+          ORDER BY timestamp DESC
+          LIMIT 1
+        `
+      )
+
+      if (lastData?.length > 0) {
+        return lastData[0]
+      }
+
+      return null
+    }
   },
 
   async getDefiProtocolData(symbol: string) {
-    // Mapa de símbolos a identificadores de DeFiLlama
-    const symbolToProtocol: Record<string, string> = {
-      'uni': 'uniswap',
-      'aave': 'aave',
-      'cake': 'pancakeswap',
-      'crv': 'curve',
-      'comp': 'compound',
-      'mkr': 'maker',
-      'sushi': 'sushiswap',
-      'bal': 'balancer',
-      'snx': 'synthetix',
-      'yfi': 'yearn-finance',
-      'link': 'chainlink',
-      'grt': 'the-graph',
-      'ren': 'ren',
-      '1inch': '1inch',
-      'alpha': 'alpha-finance',
-      'bnt': 'bancor',
-      'perp': 'perpetual-protocol',
-      'dydx': 'dydx',
-      'rook': 'rook',
-      'badger': 'badger-dao',
-      'rari': 'rari-capital',
-      'fei': 'fei-protocol',
-      'tribe': 'tribe',
-      'rai': 'rai',
-      'ohm': 'olympus',
-      'spell': 'abracadabra',
-      'mim': 'magic-internet-money',
-      'time': 'wonderland',
-      'wmemo': 'wrapped-memo',
-      'sps': 'splinterlands',
-      'slp': 'smooth-love-potion',
-      'quick': 'quickswap',
-      'joe': 'trader-joe',
-      'magic': 'magic',
-      'gmx': 'gmx',
-      'velo': 'velodrome',
-      'angle': 'angle',
-      'pendle': 'pendle',
-      'vsta': 'vesta-finance',
-      'rdnt': 'radiant-capital',
-      'thales': 'thales'
-    }
-
-    const normalizedSymbol = symbol.toLowerCase()
-    const protocolId = symbolToProtocol[normalizedSymbol]
-
-    // Si no es un protocolo DeFi conocido, retornamos un objeto con valores por defecto
-    if (!protocolId) {
-      return {
-        isDefiProtocol: false,
-        tvl: 0,
-        chainTvls: {},
-        currentChainTvls: {},
-        tokens: {}
-      }
-    }
-
     try {
-      const CACHE_KEY = `defillama-protocol-${protocolId}`
-      const ONE_DAY = 86400 // 24 horas
-
-      const data = await getCachedData(
-        CACHE_KEY,
-        async () => {
-          const response = await axios.get(`https://api.llama.fi/protocol/${protocolId}`)
-          if (!response.data || response.data === 'Protocol not found') {
-            return null
-          }
-          
-          return {
-            isDefiProtocol: true,
-            tvl: response.data.tvl || 0,
-            chainTvls: response.data.chainTvls || {},
-            currentChainTvls: response.data.currentChainTvls || {},
-            tokens: response.data.tokens || {}
-          }
-        },
-        ONE_DAY
+      // Buscar datos existentes no más viejos de 1 hora
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+      const existingData = await prisma.$queryRaw<DefiProtocolDataRecord[]>(
+        Prisma.sql`
+          SELECT * FROM "DefiProtocolData"
+          WHERE symbol = ${symbol.toUpperCase()}
+          AND timestamp > ${oneHourAgo}
+          ORDER BY timestamp DESC
+          LIMIT 1
+        `
       )
 
-      return data || {
-        isDefiProtocol: false,
-        tvl: 0,
-        chainTvls: {},
-        currentChainTvls: {},
-        tokens: {}
+      // Si encontramos datos recientes, los devolvemos
+      if (existingData?.length > 0) {
+        return existingData[0].data
       }
+
+      // Mapa de símbolos a identificadores de DeFiLlama
+      const symbolToProtocol: Record<string, string> = {
+        'uni': 'uniswap',
+        'aave': 'aave',
+        'cake': 'pancakeswap',
+        'crv': 'curve',
+        'comp': 'compound',
+        'mkr': 'maker',
+        'sushi': 'sushiswap',
+        'bal': 'balancer',
+        'snx': 'synthetix',
+        'yfi': 'yearn-finance',
+        'link': 'chainlink',
+        'grt': 'the-graph',
+        'ren': 'ren',
+        '1inch': '1inch',
+        'alpha': 'alpha-finance',
+        'bnt': 'bancor',
+        'perp': 'perpetual-protocol',
+        'dydx': 'dydx',
+        'rook': 'rook',
+        'badger': 'badger-dao',
+        'rari': 'rari-capital',
+        'fei': 'fei-protocol',
+        'tribe': 'tribe',
+        'rai': 'rai',
+        'ohm': 'olympus',
+        'spell': 'abracadabra',
+        'mim': 'magic-internet-money',
+        'time': 'wonderland',
+        'wmemo': 'wrapped-memo',
+        'sps': 'splinterlands',
+        'slp': 'smooth-love-potion',
+        'quick': 'quickswap',
+        'joe': 'trader-joe',
+        'magic': 'magic',
+        'gmx': 'gmx',
+        'velo': 'velodrome',
+        'angle': 'angle',
+        'pendle': 'pendle',
+        'vsta': 'vesta-finance',
+        'rdnt': 'radiant-capital',
+        'thales': 'thales'
+      }
+
+      const normalizedSymbol = symbol.toLowerCase()
+      const protocolId = symbolToProtocol[normalizedSymbol]
+
+      // Si no es un protocolo DeFi conocido, retornamos valores por defecto
+      if (!protocolId) {
+        const defaultData = {
+          isDefiProtocol: false,
+          tvl: 0,
+          chainTvls: {},
+          currentChainTvls: {},
+          tokens: {}
+        }
+
+        // Guardamos incluso los datos por defecto para evitar llamadas innecesarias
+        await prisma.$executeRaw`
+          INSERT INTO "DefiProtocolData" (id, symbol, data, timestamp, updated_at)
+          VALUES (${`defi-${Date.now()}`}, ${symbol.toUpperCase()}, ${JSON.stringify(defaultData)}::jsonb, NOW(), NOW())
+        `
+
+        return defaultData
+      }
+
+      // Si no hay datos o son viejos, hacemos la petición a la API
+      const response = await axios.get(`https://api.llama.fi/protocol/${protocolId}`)
+      
+      if (!response.data || response.data === 'Protocol not found') {
+        throw new Error('Protocol not found')
+      }
+
+      const defiData = {
+        isDefiProtocol: true,
+        tvl: response.data.tvl || 0,
+        chainTvls: response.data.chainTvls || {},
+        currentChainTvls: response.data.currentChainTvls || {},
+        tokens: response.data.tokens || {}
+      }
+
+      // Guardamos los nuevos datos en la base de datos
+      await prisma.$executeRaw`
+        INSERT INTO "DefiProtocolData" (id, symbol, data, timestamp, updated_at)
+        VALUES (${`defi-${Date.now()}`}, ${symbol.toUpperCase()}, ${JSON.stringify(defiData)}::jsonb, NOW(), NOW())
+      `
+
+      return defiData
     } catch (error) {
       console.error('Error fetching DeFi data:', error)
+      
+      // En caso de error, intentamos devolver los últimos datos disponibles
+      const lastData = await prisma.$queryRaw<DefiProtocolDataRecord[]>(
+        Prisma.sql`
+          SELECT * FROM "DefiProtocolData"
+          WHERE symbol = ${symbol.toUpperCase()}
+          ORDER BY timestamp DESC
+          LIMIT 1
+        `
+      )
+
+      if (lastData?.length > 0) {
+        return lastData[0].data
+      }
+
       return {
         isDefiProtocol: false,
         tvl: 0,

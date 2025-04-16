@@ -55,17 +55,12 @@ export async function GET() {
       
       // Estadísticas globales de CoinGecko
       global: {
-        activeCryptos: globalData.active_cryptocurrencies,
-        totalMarketCap: globalData.total_market_cap.usd,
-        totalVolume: globalData.total_volume.usd,
-        btcDominance: globalData.market_cap_percentage.btc,
-        ethDominance: globalData.market_cap_percentage.eth,
-        marketCapChange: globalData.market_cap_change_percentage_24h_usd,
-        volumeChange: globalData.total_volume_change_24h,
-        activeExchanges: globalData.markets,
-        ongoingIcos: globalData.ongoing_icos,
-        upcomingIcos: globalData.upcoming_icos,
-        endedIcos: globalData.ended_icos
+        activeCryptos: globalData.data.active_cryptocurrencies,
+        totalMarketCap: globalData.data.total_market_cap.usd,
+        totalVolume: globalData.data.total_volume.usd,
+        btcDominance: globalData.data.market_cap_percentage.btc,
+        ethDominance: globalData.data.market_cap_percentage.eth,
+        activeExchanges: globalData.data.active_exchanges
       },
       
       timestamp: new Date().toISOString()
