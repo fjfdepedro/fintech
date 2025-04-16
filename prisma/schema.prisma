@@ -1,11 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  schemas   = ["public"]
 }
 
 model User {
@@ -16,6 +18,8 @@ model User {
   updatedAt  DateTime    @updatedAt
   portfolios Portfolio[]
   watchlists Watchlist[]
+
+  @@schema("public")
 }
 
 model Watchlist {
@@ -26,6 +30,8 @@ model Watchlist {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])
   symbols   Symbol[] @relation("SymbolToWatchlist")
+
+  @@schema("public")
 }
 
 model Symbol {
@@ -37,6 +43,8 @@ model Symbol {
   updatedAt  DateTime    @updatedAt
   portfolios Portfolio[] @relation("PortfolioToSymbol")
   watchlists Watchlist[] @relation("SymbolToWatchlist")
+
+  @@schema("public")
 }
 
 model Portfolio {
@@ -47,18 +55,23 @@ model Portfolio {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])
   symbols   Symbol[] @relation("PortfolioToSymbol")
+
+  @@schema("public")
 }
 
 model MarketData {
-  id                String   @id @default(cuid())
-  symbol            String
-  name              String
-  price             Float
-  change            Float
-  volume            String
-  market_cap        Float
-  type              String
-  timestamp         DateTime @default(now())
+  id         String   @id @default(cuid())
+  symbol     String
+  name       String?
+  price      Float
+  change     Float
+  volume     String
+  market_cap Float
+  timestamp  DateTime @default(now())
+  logo_url   String?
+
+  @@index([symbol, timestamp])
+  @@schema("public")
 }
 
 model apiLimit {
@@ -67,6 +80,8 @@ model apiLimit {
   dailyLimit   Int
   requestCount Int      @default(0)
   lastReset    DateTime @default(now())
+
+  @@schema("public")
 }
 
 model Article {
@@ -76,6 +91,7 @@ model Article {
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
+  @@schema("public")
 }
 
 model CryptoMarketMetadata {
@@ -98,6 +114,37 @@ model CryptoMarketMetadata {
 
   @@index([symbol], map: "cryptoMarketMetadata_symbol_idx")
   @@index([timestamp], map: "cryptoMarketMetadata_timestamp_idx")
+  @@schema("public")
+}
+
+model Cache {
+  key       String   @id
+  data      String
+  timestamp DateTime @default(now())
+
+  @@index([timestamp])
+  @@schema("public")
+}
+
+model CryptoDetails {
+  id         String   @id @default(cuid())
+  symbol     String
+  data       Json?
+  timestamp  DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([symbol, timestamp])
+  @@schema("public")
+}
+
+model ExchangeData {
+  id        String   @id @default(cuid())
+  symbol    String
+  tickers   Json?
+  timestamp DateTime @default(now())
+
+  @@index([symbol, timestamp])
+  @@schema("public")
 }
 
 enum SymbolType {
@@ -105,12 +152,6 @@ enum SymbolType {
   CRYPTO
   ETF
   FOREX
-}
 
-model Cache {
-  key       String   @id
-  data      String   @db.Text
-  timestamp DateTime @default(now())
-
-  @@index([timestamp])
+  @@schema("public")
 }

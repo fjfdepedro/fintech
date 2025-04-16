@@ -93,7 +93,6 @@ export async function POST(request: Request) {
         price: validation.data.price,
         change: validation.data.change,
         volume: validation.data.volume.toString(),
-        type: 'CRYPTO',
         timestamp: new Date(),
         market_cap: validation.data.market_cap ?? 0
       }

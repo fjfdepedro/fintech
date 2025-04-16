@@ -67,9 +67,8 @@ export async function checkAndUpdateCryptoData() {
             volume: coin.volume.toString(),
             market_cap: coin.market_cap,
             change: coin.change,
-            type: 'CRYPTO',
             timestamp: new Date()
-          }))
+          })) as any
         })
 
         // Note: We're removing revalidatePath as it causes dynamic server usage errors
@@ -105,7 +104,6 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
       WITH LatestTimestamps AS (
         SELECT symbol, MAX(timestamp) as latest_timestamp
         FROM "MarketData"
-        WHERE type = 'CRYPTO'
         GROUP BY symbol
       )
       SELECT m.*
@@ -113,7 +111,6 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
       INNER JOIN LatestTimestamps lt 
         ON m.symbol = lt.symbol 
         AND m.timestamp = lt.latest_timestamp
-      WHERE m.type = 'CRYPTO'
       ORDER BY m.market_cap DESC
     `
 
@@ -122,7 +119,6 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
       // Try to get any data from the last 24 hours
       const fallbackData = await prisma.marketData.findMany({
         where: {
-          type: 'CRYPTO',
           timestamp: {
             gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
           }
@@ -145,9 +141,6 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
     // Try to get any recent data as a last resort
     try {
       const emergencyData = await prisma.marketData.findMany({
-        where: {
-          type: 'CRYPTO'
-        },
         orderBy: {
           timestamp: 'desc'
         },

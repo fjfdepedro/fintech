@@ -353,7 +353,6 @@ export const cryptoAPI = {
       // First, get all existing data from the database
       const existingData = await prisma.marketData.findMany({
         where: {
-          type: 'CRYPTO',
           symbol: {
             in: specificCoins.map(coin => coin.toUpperCase())
           }
@@ -444,7 +443,7 @@ export const cryptoAPI = {
         change: coin.price_change_percentage_24h || 0,
         volume: (coin.total_volume || 0).toString(),
         market_cap: coin.market_cap || 0,
-        type: 'CRYPTO',
+        logo_url: coin.image?.thumb || null,
         timestamp: currentTimestamp
       }))
 
@@ -464,9 +463,6 @@ export const cryptoAPI = {
       console.error('Error obteniendo datos de CoinGecko:', error)
       // Return all cached data as fallback
       const cachedData = await prisma.marketData.findMany({
-        where: {
-          type: 'CRYPTO'
-        },
         orderBy: {
           timestamp: 'desc'
         },

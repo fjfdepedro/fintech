@@ -25,9 +25,6 @@ export async function checkAndUpdateArticle() {
       try {
         // 2. Get crypto data for the article
         const cryptoData = await prisma.marketData.findMany({
-          where: {
-            type: 'CRYPTO'
-          },
           orderBy: {
             timestamp: 'desc'
           },

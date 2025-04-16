@@ -56,96 +56,49 @@ export const articleAPI = {
       
       console.log('Top cryptocurrencies selected:', topCoins.map(c => c.symbol).join(', '))
 
-      // Get specific news for each top coin
-      const specificNewsPromises = topCoins.map(coin => 
-        newsAPI.getCryptoSpecificNews(coin.symbol)
-      )
-      const specificNewsResults = await Promise.all(specificNewsPromises)
-      
       // Format general market news section
-      const generalNewsSection = generalNews.length > 0 ? `
-Recent Market News:
-${generalNews.slice(0, 5).map(article => {
-  if (!article.title) return ''
-  const newsDate = new Date(article.pubDate).toLocaleDateString()
-  return `
-Title: ${article.title.trim()}
-Source: ${article.source_name || 'Unknown'}
-Date: ${newsDate}
-Summary: ${article.description ? 
-    article.description.slice(0, 2500).trim() + 
-    (article.description.length > 2500 ? '...' : '') : 
-    'No description available'}`
-}).filter(Boolean).join('\n')}` : ''
-
-      // Format specific crypto news sections
-      const specificNewsSections = topCoins.map((coin, index) => {
-        const coinNews = specificNewsResults[index] || []
-        if (!coin.name || !coin.symbol) return ''
-        
+      const generalNewsSection = generalNews.length > 0 ? generalNews.slice(0, 5).map(article => {
+        if (!article.title) return ''
+        const newsDate = new Date(article.pubDate).toLocaleDateString()
         return `
-${coin.name} (${coin.symbol}) Market Impact:
-Current Price: $${typeof coin.price === 'number' ? coin.price.toFixed(2) : 'N/A'}
-24h Change: ${typeof coin.change === 'number' ? (coin.change as number).toFixed(2) : 'N/A'}%
-Trading Volume: $${typeof coin.volume === 'number' ? (coin.volume as number).toLocaleString() : 'N/A'}
-
-Related News:
-${coinNews.slice(0, 3).map(article => {
-  if (!article.title) return ''
-  const newsDate = new Date(article.pubDate).toLocaleDateString()
-  return `
 Title: ${article.title.trim()}
 Source: ${article.source_name || 'Unknown'}
 Date: ${newsDate}
 Summary: ${article.description ? 
-    article.description.slice(0, 2500).trim() + 
-    (article.description.length > 2500 ? '...' : '') : 
-    'No description available'}`
-}).filter(Boolean).join('\n')}`
-      }).filter(Boolean).join('\n\n')
+          article.description.slice(0, 2500).trim() + 
+          (article.description.length > 2500 ? '...' : '') : 
+          'No description available'}`
+      }).filter(Boolean).join('\n') : ''
 
       // Create market data section
       const cryptoSection = cryptoData.map(coin => `
 ${coin.name} (${coin.symbol}):
 Price: $${typeof coin.price === 'number' ? coin.price.toFixed(2) : 'N/A'}
-24h Change: ${typeof coin.change === 'number' ? coin.change.toFixed(2) : 'N/A'}%
-Volume: $${typeof coin.volume === 'number' ? (coin.volume as number).toLocaleString() : 'N/A'}`
+24h Change: ${typeof coin.change === 'number' ? coin.change.toFixed(2) : 'N/A'}%`
       ).join('\n\n')
 
       console.log('Constructing final prompt...')
 
       const prompt = `Write a crypto market analysis article focusing on how recent news impacts cryptocurrency prices. Title: "Crypto Market Analysis: News Impact and Market Movements"
 
-Your task is to analyze each news article and its impact on cryptocurrency prices. For each news article provided:
+IMPORTANT: This article MUST be written in English ONLY. Do not include any non-English text or characters.
 
-1. First, analyze these major news stories:
-   - Neptune Digital Assets Bitcoin treasury expansion
-   - House of Doge and 21Shares DOGE ETP partnership
-   - TRON's $900 million fee milestone
-   - Any other significant news provided
+Analyze the provided news articles and their impact on cryptocurrency prices. For each news story:
 
-2. For each news story:
-   a) What cryptocurrencies are mentioned?
-   b) What are their current prices and 24h changes?
-   c) How might this news explain their price movements?
+1. Identify the cryptocurrencies mentioned and their current prices
+2. Summarize the key points from the news
+3. Explain how the news might have affected their price movements
 
-3. Structure each news analysis like this:
-   NEWS HEADLINE
-   - Cryptocurrencies Involved: [List them with current prices]
-   - Key Points from News: [Brief summary]
-   - Price Impact Analysis: [Connect news to price movements]
-
-4. After analyzing individual news, group related stories by category:
-   - Bitcoin and Layer 1 news
-   - DeFi developments
-   - Exchange and institutional news
-   - Other significant developments
+Structure the analysis in these sections:
+- Individual News Analysis (for each major story)
+- Market Overview (grouping related stories by category)
+- Conclusion (summarizing key impacts)
 
 Remember:
-- MUST analyze EACH news story provided
 - Use exact prices and percentages from the market data
 - Focus on connecting news events to price movements
 - No predictions or trading advice
+- Write in English ONLY
 
 Here is the data to analyze:
 
@@ -153,13 +106,9 @@ Market Data:
 
 ${cryptoSection}
 
-Recent News:
+Recent Market News:
 
-${generalNewsSection}
-
-Specific Cryptocurrency News:
-
-${specificNewsSections}`
+${generalNewsSection}`
 
       // Guardar el prompt y logging
       if (IS_DEVELOPMENT) {
@@ -176,7 +125,6 @@ ${specificNewsSections}`
           console.log('Prompt structure:')
           console.log('- Market Data sections:', cryptoSection.split('\n\n').length)
           console.log('- General News articles:', generalNews.length)
-          console.log('- Specific News sections:', specificNewsSections.split('\n\n').length)
         } catch (error) {
           console.error('Error saving prompt:', error)
         }

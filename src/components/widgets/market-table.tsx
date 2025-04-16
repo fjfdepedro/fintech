@@ -182,8 +182,8 @@ export function MarketTable({ data, loading, error, type, className }: MarketTab
               return (
                 <TableRow key={`${item.symbol}-${item.timestamp}`}>
                   <TableCell>
-                    <Link href=''
-                      // href={`/crypto/${item.symbol.toLowerCase()}`} 
+                    <Link 
+                      href={`/crypto/${item.symbol.toLowerCase()}`}
                       className="flex items-center gap-2 hover:text-primary transition-colors"
                     >
                       {item.logo_url ? (
