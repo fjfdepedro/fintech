@@ -2,9 +2,9 @@ import { cryptoAPI } from '@/lib/api/crypto-service'
 import prisma from '@/lib/prisma'
 import { cache } from 'react'
 
-const DATA_REFRESH_INTERVAL = 15 * 60 * 1000 // 15 minutes
-const NEGATIVE_CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours - Cryptocurrency symbols rarely change, and if a coin is delisted, it's unlikely to return within 24 hours
-const VERCEL_CACHE_TTL = 60 * 5 // 5 minutes
+const DATA_REFRESH_INTERVAL = 60 * 60 * 1000 // 1 hour - aligned with page revalidation
+const NEGATIVE_CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours for negative results
+const VERCEL_CACHE_TTL = 60 * 60 // 1 hour - aligned with page revalidation
 
 // Cache for negative results
 const negativeCache = new Map<string, { timestamp: number, message: string }>()

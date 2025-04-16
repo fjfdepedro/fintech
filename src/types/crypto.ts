@@ -73,20 +73,17 @@ export interface SocialMetrics {
   last_commit?: number[]
 }
 
+export interface DefiTokenData {
+  tvl: number;
+  [key: string]: any;
+}
+
 export interface DefiData {
-  price_data: {
-    prices: [number, number][]
-    market_caps: [number, number][]
-    total_volumes: [number, number][]
-  }
-  defi_metrics?: {
-    tvl: number
-    tvl_change_24h: number
-    total_apy: number
-    pools_count: number
-    total_borrowed: number
-    total_supplied: number
-  }
+  isDefiProtocol: boolean
+  tvl: number
+  chainTvls: Record<string, number>
+  currentChainTvls: Record<string, number>
+  tokens: Record<string, DefiTokenData>
 }
 
 export interface OnChainMetrics {

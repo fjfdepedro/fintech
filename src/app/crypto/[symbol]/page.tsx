@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PriceChart } from "@/components/charts/price-chart"
 import { cryptoAPI } from '@/lib/api/crypto-service'
 import { formatDate, formatNumber, formatPercentage } from "@/lib/utils"
-import { CryptoDetailedData, DefiData, OnChainMetrics, SentimentData } from "@/types/crypto"
+import { CryptoDetailedData, DefiData, OnChainMetrics, SentimentData, DefiTokenData } from "@/types/crypto"
 import Image from 'next/image'
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -371,9 +371,11 @@ export default async function CryptoDetailPage({ params }: PageProps) {
                         ${formatNumber(detail?.market_data?.ath?.usd || 0)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {detail?.market_data?.ath_date?.usd && 
-                          formatDate(new Date(detail.market_data.ath_date.usd))
-                        }
+                        {detail?.market_data?.ath_date?.usd && (
+                          <time dateTime={detail.market_data.ath_date.usd}>
+                            {formatDate(new Date(detail.market_data.ath_date.usd))}
+                          </time>
+                        )}
                       </div>
                     </div>
                     <div>
@@ -382,9 +384,11 @@ export default async function CryptoDetailPage({ params }: PageProps) {
                         ${formatNumber(detail?.market_data?.atl?.usd || 0)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {detail?.market_data?.atl_date?.usd && 
-                          formatDate(new Date(detail.market_data.atl_date.usd))
-                        }
+                        {detail?.market_data?.atl_date?.usd && (
+                          <time dateTime={detail.market_data.atl_date.usd}>
+                            {formatDate(new Date(detail.market_data.atl_date.usd))}
+                          </time>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -652,12 +656,36 @@ export default async function CryptoDetailPage({ params }: PageProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
-                        {Object.entries(defi.tokens).map(([token, data]: [string, any]) => (
-                          <div key={token} className="flex justify-between items-center">
-                            <span>{token}</span>
-                            <span className="font-medium">${formatNumber(data?.tvl ?? 0)}</span>
-                          </div>
-                        ))}
+                        {Object.entries(defi.tokens || {})
+                          .filter((entry): entry is [string, DefiTokenData] => {
+                            const [_, data] = entry;
+                            return typeof data === 'object' && data !== null && 'tvl' in data && typeof (data as DefiTokenData).tvl === 'number' && (data as DefiTokenData).tvl > 0;
+                          })
+                          .sort(([_, a], [__, b]) => b.tvl - a.tvl)
+                          .slice(0, 10)
+                          .map(([token, data]) => {
+                            const tvl = data?.tvl ?? 0
+                            const percentage = (tvl / (defi?.tvl ?? 1)) * 100
+                            return (
+                              <div key={token} className="relative">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="font-medium">{token}</span>
+                                  <div className="text-right">
+                                    <span className="font-medium">${formatNumber(tvl)}</span>
+                                    <span className="text-sm text-muted-foreground ml-2">
+                                      ({percentage.toFixed(1)}%)
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-primary" 
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          })}
                       </div>
                     </CardContent>
                   </Card>

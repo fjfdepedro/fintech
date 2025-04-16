@@ -1,8 +1,10 @@
-'use client'
-
 import Link from 'next/link'
+import { formatDate } from '@/lib/utils'
 
 export function SiteFooter() {
+  // Usar una fecha fija basada en el tiempo de build
+  const buildDate = new Date()
+  
   return (
     <footer className="mt-12 py-8 border-t border-border">
       <div className="container">
@@ -42,14 +44,14 @@ export function SiteFooter() {
           <div>
             <h3 className="font-semibold mb-3">Data Sources</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Last updated: {new Date().toLocaleString()}</li>
+              <li>Last updated: {formatDate(buildDate)}</li>
               <li>All times shown in GMT</li>
             </ul>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} Crypto Market Insights. All rights reserved.</p>
+            <p>© {buildDate.getFullYear()} Crypto Market Insights. All rights reserved.</p>
             <p>Made with ❤️ for the crypto community</p>
           </div>
         </div>
