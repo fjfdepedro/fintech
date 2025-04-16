@@ -190,7 +190,7 @@ ${generalNewsSection}`
 
       console.log('Sending request to OpenRouter API...')
       const response = await axios.post(OPENROUTER_URL, {
-        model: "mistralai/mistral-small-3.1-24b-instruct:free",
+        model: "google/gemini-2.5-pro-exp-03-25:free",
         messages: [
           {
             role: "system",
