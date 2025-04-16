@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import prisma from '@/lib/prisma'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 // Force static generation with ISR
 export const dynamic = 'force-static'
@@ -110,6 +112,20 @@ export default async function CryptoDetailPage({ params }: PageProps) {
 
     if (!marketData) {
       return <LoadingState />
+    }
+
+    if ('error' in marketData) {
+      return (
+        <div className="container mx-auto p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Data Not Available</AlertTitle>
+            <AlertDescription>
+              {marketData.error}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )
     }
 
     // Then fetch detailed data
