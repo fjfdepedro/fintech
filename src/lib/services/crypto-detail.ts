@@ -27,6 +27,7 @@ export const getBasicCryptoData = cache(async (symbol: string): Promise<MarketDa
     // Check negative cache first
     const cachedNegative = negativeCache.get(symbol.toUpperCase())
     if (cachedNegative && Date.now() - cachedNegative.timestamp < NEGATIVE_CACHE_TTL) {
+      console.log(`Using cached negative result for ${symbol}`)
       return { error: cachedNegative.message }
     }
 
@@ -40,18 +41,45 @@ export const getBasicCryptoData = cache(async (symbol: string): Promise<MarketDa
     })
 
     if (!marketData) {
-      // Cache negative result
+      const errorMessage = `No data available for ${symbol.toUpperCase()}. This cryptocurrency may not be supported or may have been delisted.`
       negativeCache.set(symbol.toUpperCase(), {
         timestamp: Date.now(),
-        message: `No data available for ${symbol.toUpperCase()}. This cryptocurrency may not be supported or may have been delisted.`
+        message: errorMessage
       })
-      return { error: `No data available for ${symbol.toUpperCase()}. This cryptocurrency may not be supported or may have been delisted.` }
+      return { error: errorMessage }
     }
 
-    return marketData
-  } catch (error) {
+    // Ensure all required fields are present
+    const response: MarketDataResponse = {
+      id: marketData.id,
+      symbol: marketData.symbol,
+      name: marketData.name,
+      price: marketData.price,
+      change: marketData.change,
+      volume: marketData.volume,
+      market_cap: marketData.market_cap,
+      timestamp: marketData.timestamp,
+      logo_url: marketData.logo_url
+    }
+
+    return response
+  } catch (error: any) {
     console.error('Error fetching basic crypto data:', error)
-    return { error: 'An error occurred while fetching cryptocurrency data. Please try again later.' }
+    
+    // Cache HTTP 500 and 400 errors
+    if (error?.statusCode === 500 || error?.statusCode === 400 || error?.code === 'P2002' || error?.code === 'P2025') {
+      const errorMessage = 'Service temporarily unavailable. Please try again later.'
+      negativeCache.set(symbol.toUpperCase(), {
+        timestamp: Date.now(),
+        message: errorMessage
+      })
+      console.log(`Cached error for ${symbol} due to HTTP ${error?.statusCode || error?.code}`)
+      return { error: errorMessage }
+    }
+
+    return { 
+      error: 'An error occurred while fetching cryptocurrency data. Please try again later.' 
+    }
   }
 })
 
