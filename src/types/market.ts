@@ -15,5 +15,6 @@ export type NonNullableMarketData = {
 export const ensureNonNullable = (data: MarketData): NonNullableMarketData => ({
   ...data,
   name: data.name || data.symbol,
-  volume: data.volume || '0'
+  volume: data.volume || '0',
+  type: 'CRYPTO'
 } as NonNullableMarketData) 
