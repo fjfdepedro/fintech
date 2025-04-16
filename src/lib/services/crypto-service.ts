@@ -106,7 +106,7 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
         FROM "MarketData"
         GROUP BY symbol
       )
-      SELECT m.*
+      SELECT m.*, 'CRYPTO' as type
       FROM "MarketData" m
       INNER JOIN LatestTimestamps lt 
         ON m.symbol = lt.symbol 
@@ -131,7 +131,11 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
 
       if (fallbackData && fallbackData.length > 0) {
         console.log('Using fallback data from last 24 hours:', fallbackData.length, 'records')
-        return fallbackData
+        return fallbackData.map(data => ({
+          ...data,
+          type: 'CRYPTO',
+          name: data.name || data.symbol
+        }))
       }
     }
 
@@ -150,7 +154,11 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
       
       if (emergencyData && emergencyData.length > 0) {
         console.log('Using emergency fallback data:', emergencyData.length, 'records')
-        return emergencyData
+        return emergencyData.map(data => ({
+          ...data,
+          type: 'CRYPTO',
+          name: data.name || data.symbol
+        }))
       }
     } catch (dbError) {
       console.error('Error getting emergency data:', dbError)
