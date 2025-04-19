@@ -16,6 +16,41 @@ module.exports = {
   		}
   	},
   	extend: {
+  		typography: {
+  			DEFAULT: {
+  				css: {
+  					maxWidth: 'none',
+  					color: 'hsl(var(--foreground))',
+  					h1: {
+  						color: 'hsl(var(--primary))',
+  					},
+  					h2: {
+  						color: 'hsl(var(--primary))',
+  					},
+  					h3: {
+  						color: 'hsl(var(--primary))',
+  					},
+  					strong: {
+  						color: 'hsl(var(--primary))',
+  					},
+  					a: {
+  						color: 'hsl(var(--primary))',
+  						'&:hover': {
+  							color: 'hsl(var(--primary))',
+  						},
+  					},
+  					code: {
+  						color: 'hsl(var(--primary))',
+  					},
+  					'code::before': {
+  						content: '""',
+  					},
+  					'code::after': {
+  						content: '""',
+  					},
+  				},
+  			},
+  		},
   		keyframes: {
   			'accordion-down': {
   				from: {
@@ -87,6 +122,9 @@ module.exports = {
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography")
+  ],
 }
 
