@@ -79,84 +79,49 @@ Price: $${typeof coin.price === 'number' ? coin.price.toFixed(2) : 'N/A'}
 
       console.log('Constructing final prompt...')
 
-      const prompt = `Write a comprehensive crypto market analysis article focusing on how recent news impacts cryptocurrency prices. Title: "Crypto Market Analysis: News Impact and Market Movements"
+      const prompt = `Write a comprehensive crypto market analysis article in proper Markdown format. Use standard Markdown syntax for all formatting.
 
 CRITICAL REQUIREMENTS:
-1. This article MUST be written in English ONLY. No exceptions.
-2. Never use any non-English characters, symbols, or text.
-3. Never use special characters or symbols to represent numbers or percentages.
-4. Use proper English formatting and punctuation.
-5. If you cannot provide a value, use "N/A" instead of symbols or placeholders.
-6. Format all numbers and percentages in standard English format (e.g., $50,000, 5.2%, etc.).
-7. Use clear section headers and subheaders.
-8. Break long paragraphs into shorter ones for better readability.
-9. Use bullet points and numbered lists where appropriate.
+1. Use ONLY standard Markdown syntax:
+   - # for main title
+   - ## for section headers
+   - ### for subsections
+   - * or - for bullet points
+   - 1. 2. 3. for numbered lists
+   - ** or __ for bold text
+   - * or _ for italic text
+2. Format the article with this exact structure:
+   # Crypto Market Analysis: News Impact and Market Movements
 
-STRUCTURE REQUIREMENTS:
-1. Title and Introduction
-   - Clear, descriptive title
-   - Brief market overview
-   - Key points to be covered
+   [Brief introduction paragraph]
 
-2. Individual News Analysis (for each major story)
-   - Clear header for each news item
-   - Cryptocurrencies affected (with current prices)
-   - Key points in bullet points
-   - Impact analysis with quantitative data
-   - Historical context if relevant
-   - Connection to broader market trends
+   ## Market Overview
+   [Content]
 
-3. Market Overview
-   - Categorized analysis (Regulatory, Technical, Market Sentiment)
-   - Data-driven insights
-   - Trend analysis
-   - Comparative analysis with historical events
+   ## Individual News Analysis
+   [Content]
 
-4. Technical Analysis
-   - Price movements and patterns
-   - Volume analysis
-   - Support and resistance levels
-   - Market indicators
+   ## Technical Analysis
+   [Content]
 
-5. Market Sentiment
-   - Social media trends
-   - Trading volume analysis
-   - Institutional activity
-   - Retail investor behavior
+   ## Market Sentiment
+   [Content]
 
-6. Conclusion
-   - Summary of key impacts
-   - Future outlook
-   - Risk factors to watch
-   - Key takeaways in bullet points
+   ## Conclusion
+   [Content]
 
-CONTENT REQUIREMENTS:
-1. For each cryptocurrency mentioned:
-   - Current price
-   - 24h price change
-   - Trading volume
-   - Market cap
-   - Historical context
+3. For cryptocurrency data, use this format:
+   ### [Crypto Name] (SYMBOL)
+   - Price: $X,XXX.XX
+   - 24h Change: X.XX%
+   - Trading Volume: $X,XXX,XXX
+   - Market Cap: $X,XXX,XXX
 
-2. For each news event:
-   - Quantitative impact on prices
-   - Volume changes
-   - Market cap changes
-   - Historical precedents
-   - Similar past events and their outcomes
-
-3. Market Analysis:
-   - Correlation between events
-   - Chain reactions
-   - Sector-wide impacts
-   - Long-term implications
-
-4. Data Presentation:
-   - Use tables for price comparisons
-   - Use bullet points for key facts
-   - Use numbered lists for sequential events
-   - Include percentage changes
-   - Show volume and market cap data
+4. For news analysis, use this format:
+   ### [News Title]
+   - Impact: [Description]
+   - Affected Cryptocurrencies: [List]
+   - Market Response: [Analysis]
 
 Here is the data to analyze:
 
@@ -190,7 +155,7 @@ ${generalNewsSection}`
 
       console.log('Sending request to OpenRouter API...')
       const response = await axios.post(OPENROUTER_URL, {
-        model: "google/gemini-2.5-pro-exp-03-25:free",
+        model: "mistralai/mistral-small-3.1-24b-instruct:free",
         messages: [
           {
             role: "system",
@@ -212,7 +177,8 @@ ${generalNewsSection}`
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'HTTP-Referer': 'https://your-site.com',
-          'X-Title': 'Crypto Market Analysis'
+          'X-Title': 'Crypto Market Analysis',
+          'HTTP-Origin': 'https://your-site.com'
         },
         timeout: 60000
       })
