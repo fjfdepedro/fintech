@@ -311,7 +311,7 @@ ${generalNewsSection}`
       
       // Wrap the content in a container with base styles
       const wrappedHtml = `
-        <div class="w-full max-w-4xl mx-auto bg-background text-foreground">
+        <div class="w-full mx-auto bg-background text-foreground">
           <article class="prose prose-slate dark:prose-invert max-w-none p-1 sm:p-8">
             ${htmlContent}
           </article>
