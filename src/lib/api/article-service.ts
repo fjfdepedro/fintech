@@ -3,7 +3,6 @@ import type { MarketData, Prisma } from '@prisma/client'
 import type { NewsArticle } from './news-service'
 import { newsAPI } from './news-service'
 import { marked } from 'marked'
-import { formatDate } from '../utils/date'
 import fs from 'fs'
 import path from 'path'
 import { PrismaClient } from '@prisma/client'
@@ -32,7 +31,7 @@ export interface ArticleResponse {
 
 function formatHtmlWithTailwind(html: string): string {
   // Primero envolvemos todo el contenido en un contenedor principal
-  const wrappedHtml = `<article class="prose prose-slate dark:prose-invert max-w-none p-6 sm:p-8">${html}</article>`
+  const wrappedHtml = `<article class="prose prose-slate dark:prose-invert max-w-none p-1 sm:p-8">${html}</article>`
   
   // Reemplazamos las etiquetas HTML con versiones estilizadas
   return wrappedHtml

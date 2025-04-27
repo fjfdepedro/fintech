@@ -239,7 +239,7 @@ export default async function Home() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="prose prose-slate dark:prose-invert max-w-none p-6 sm:p-8">
+              <CardContent className="prose prose-slate dark:prose-invert max-w-none p-1 sm:p-8">
                 <CryptoArticle content={article?.content || 'No article available at this time.'} />
               </CardContent>
             </Card>
