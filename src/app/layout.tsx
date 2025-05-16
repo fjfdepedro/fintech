@@ -15,7 +15,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const revalidate = 3600 // Revalidate every hour
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.cryptotoday.click'),
+  metadataBase: new URL('https://fintech-beta-three.vercel.app'),
   title: {
     template: '%s | Crypto Market Insights',
     default: 'Crypto Market Insights',
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://www.cryptotoday.click",
+    url: "https://fintech-beta-three.vercel.app",
     title: "CryptoToday | Real-time Crypto Market Insights",
     description: "Get real-time crypto market insights, price charts, and market analysis. Track top cryptos, view price trends, and stay updated with the latest market data.",
     siteName: "CryptoToday",
