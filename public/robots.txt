@@ -23,4 +23,4 @@ Disallow: /*/register/
 Disallow: /*/profile/
 Disallow: /*/settings/
 
-Sitemap: https://fintech-beta-three.vercel.app/sitemap.xml
+Sitemap: https://www.cryptotoday.click/sitemap.xml
