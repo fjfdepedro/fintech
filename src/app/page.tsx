@@ -122,25 +122,35 @@ export default async function Home() {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - 7)
 
-      // Fetch all historical data in a single query
-      const historicalData = await prisma.marketData.findMany({
-        where: {
-          symbol: {
-            in: symbols.map(s => s.toUpperCase())
+      // Calculate max records per symbol to stay under 5MB limit
+      // With ~20-30 symbols, limit to ~30-40 records per symbol = ~600-1200 total records
+      const maxRecordsPerSymbol = Math.max(20, Math.floor(1000 / symbols.length))
+
+      // Fetch historical data for each symbol with individual limits
+      // This ensures even distribution across all symbols
+      const historicalDataPromises = symbols.map(async (symbol) => {
+        const data = await prisma.marketData.findMany({
+          where: {
+            symbol: symbol.toUpperCase(),
+            timestamp: {
+              gte: startDate
+            }
           },
-          timestamp: {
-            gte: startDate
-          }
-        },
-        orderBy: {
-          timestamp: 'asc'
-        },
-        select: {
-          symbol: true,
-          price: true,
-          timestamp: true
-        }
+          orderBy: {
+            timestamp: 'asc'
+          },
+          select: {
+            symbol: true,
+            price: true,
+            timestamp: true
+          },
+          take: maxRecordsPerSymbol
+        })
+        return data
       })
+
+      const allHistoricalData = await Promise.all(historicalDataPromises)
+      const historicalData = allHistoricalData.flat()
 
       // Agrupar los datos por símbolo
       const groupedData = historicalData.reduce((acc, record) => {
