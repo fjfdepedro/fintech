@@ -847,6 +847,21 @@ export const cryptoAPI = {
         return existingData[0]
       }
 
+      // ✅ FIXED: Check if API key exists before making request
+      if (!process.env.MESSARI_API_KEY) {
+        console.warn('Messari API key not configured, skipping API call')
+        // Try to return latest cached data
+        const lastData = await prisma.$queryRaw<MessariMetricsRecord[]>(
+          Prisma.sql`
+            SELECT * FROM "MessariMetrics"
+            WHERE symbol = ${coinId.toUpperCase()}
+            ORDER BY timestamp DESC
+            LIMIT 1
+          `
+        )
+        return lastData?.length > 0 ? lastData[0] : null
+      }
+
       const slug = await getMessariSlug(coinId)
 
       // Si no hay datos o son viejos, hacemos la petición a la API

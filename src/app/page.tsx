@@ -13,6 +13,7 @@ import { formatDate, isValidPastDate } from "@/lib/utils/date"
 import { ImageGallery } from '@/components/ui/image-gallery'
 import Image from 'next/image'
 import { SiteFooter } from "@/components/site-footer"
+import { cache } from 'react'
 
 // Force static generation with ISR
 export const dynamic = 'force-static'
@@ -57,15 +58,15 @@ async function getArticle() {
   return getLatestArticle()
 }
 
-// Function to get crypto metadata
-async function getCryptoMetadata() {
+// ✅ Cache crypto metadata to avoid duplicate queries
+const getCryptoMetadata = cache(async () => {
   return prisma.cryptoMarketMetadata.findMany({
     select: {
       symbol: true,
       logo_url: true
     }
   })
-}
+})
 
 export default async function Home() {
   try {
@@ -118,7 +119,7 @@ export default async function Home() {
     // Obtener todos los símbolos únicos
     const symbols = cryptoData.map((coin: CryptoData) => coin.symbol)
 
-    async function getHistoricalData(symbols: string[]): Promise<HistoricalCryptoData[]> {
+    async function getHistoricalData(symbols: string[], cryptoData: CryptoData[]): Promise<HistoricalCryptoData[]> {
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - 7)
 
@@ -126,41 +127,41 @@ export default async function Home() {
       // With ~20-30 symbols, limit to ~30-40 records per symbol = ~600-1200 total records
       const maxRecordsPerSymbol = Math.max(20, Math.floor(1000 / symbols.length))
 
-      // Fetch historical data for each symbol with individual limits
-      // This ensures even distribution across all symbols
-      const historicalDataPromises = symbols.map(async (symbol) => {
-        const data = await prisma.marketData.findMany({
-          where: {
-            symbol: symbol.toUpperCase(),
-            timestamp: {
-              gte: startDate
-            }
+      // ✅ FIXED: Single query with IN instead of 67 individual queries
+      const historicalData = await prisma.marketData.findMany({
+        where: {
+          symbol: {
+            in: symbols.map(s => s.toUpperCase())
           },
-          orderBy: {
-            timestamp: 'asc'
-          },
-          select: {
-            symbol: true,
-            price: true,
-            timestamp: true
-          },
-          take: maxRecordsPerSymbol
-        })
-        return data
+          timestamp: {
+            gte: startDate
+          }
+        },
+        orderBy: [
+          { symbol: 'asc' },
+          { timestamp: 'asc' }
+        ],
+        select: {
+          symbol: true,
+          price: true,
+          timestamp: true
+        },
+        // Take total records and distribute evenly
+        take: maxRecordsPerSymbol * symbols.length
       })
 
-      const allHistoricalData = await Promise.all(historicalDataPromises)
-      const historicalData = allHistoricalData.flat()
-
-      // Agrupar los datos por símbolo
+      // Agrupar los datos por símbolo y limitar por símbolo
       const groupedData = historicalData.reduce((acc, record) => {
         if (!acc[record.symbol]) {
           acc[record.symbol] = []
         }
-        acc[record.symbol].push({
-          date: record.timestamp,
-          value: record.price
-        })
+        // Limit records per symbol during grouping
+        if (acc[record.symbol].length < maxRecordsPerSymbol) {
+          acc[record.symbol].push({
+            date: record.timestamp,
+            value: record.price
+          })
+        }
         return acc
       }, {} as Record<string, HistoricalDataPoint[]>)
 
@@ -173,7 +174,7 @@ export default async function Home() {
     }
 
     // Fetch historical data for all cryptos in a single query
-    const historicalData = await getHistoricalData(symbols)
+    const historicalData = await getHistoricalData(symbols, cryptoData)
 
     // Prepare structured data for the page
     const structuredData = {

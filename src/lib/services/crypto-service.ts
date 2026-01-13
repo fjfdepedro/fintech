@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma'
 import { cryptoAPI } from '@/lib/api/crypto-service'
 import { CryptoData } from '@/types/crypto'
+import { cache } from 'react'
 
 const UPDATE_INTERVAL = 60 * 60 * 1000 // 1 hora (para que coincida con la revalidación de la página)
 const MAX_BACKOFF_INTERVAL = 4 * 60 * 60 * 1000 // 4 horas máximo de espera
@@ -97,7 +98,8 @@ export async function checkAndUpdateCryptoData() {
   }
 }
 
-export async function getLatestCryptoData(): Promise<CryptoData[]> {
+// ✅ Wrap with React cache to avoid duplicate queries in the same request
+export const getLatestCryptoData = cache(async (): Promise<CryptoData[]> => {
   try {
     // Get latest data for each symbol
     const latestData = await prisma.$queryRaw<CryptoData[]>`
@@ -108,8 +110,8 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
       )
       SELECT m.*, 'CRYPTO' as type
       FROM "MarketData" m
-      INNER JOIN LatestTimestamps lt 
-        ON m.symbol = lt.symbol 
+      INNER JOIN LatestTimestamps lt
+        ON m.symbol = lt.symbol
         AND m.timestamp = lt.latest_timestamp
       ORDER BY m.market_cap DESC
     `
@@ -151,7 +153,7 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
         distinct: ['symbol'],
         take: 50
       })
-      
+
       if (emergencyData && emergencyData.length > 0) {
         console.log('Using emergency fallback data:', emergencyData.length, 'records')
         return emergencyData.map(data => ({
@@ -165,4 +167,4 @@ export async function getLatestCryptoData(): Promise<CryptoData[]> {
     }
     return []
   }
-}
+})
