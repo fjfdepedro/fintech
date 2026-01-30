@@ -55,8 +55,8 @@ export function Header() {
             <h1 className="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-white dark:to-[#D1D5DB] bg-clip-text text-transparent">
               Crypto Market
             </h1>
-            <p className="text-xs sm:text-sm text-[#4A4A4A] dark:text-[#D1D5DB] hidden sm:block">
-              Real-time crypto market analysis
+            <p className="text-xs sm:text-sm text-[#4A4A4A] dark:text-[#D1D5DB]">
+              by <span className="font-semibold text-emerald-500">PacoTeam</span>
             </p>
           </div>
         </Link>
