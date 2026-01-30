@@ -51,7 +51,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-8 pt-6 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>© {buildDate.getFullYear()} Crypto Market Insights. All rights reserved.</p>
+            <p>© {buildDate.getFullYear()} PacoTeam. All rights reserved.</p>
             <p>Made with ❤️ for the crypto community</p>
           </div>
         </div>
