@@ -89,15 +89,6 @@ export function Header() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#E5E5E5] to-white dark:from-[#2A2A2A] dark:to-[#111111] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
             <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-[#E5E5E5] dark:to-[#D1D5DB] group-hover:w-full transition-all duration-300" />
           </Link>
-          <Link 
-            href="#crypto-price-charts" 
-            onClick={(e) => scrollToSection('crypto-price-charts', e)}
-            className="group relative px-4 py-2 text-lg font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:text-[#111111] dark:hover:text-white transition-all duration-300"
-          >
-            <span className="relative z-10">Crypto Price Charts</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#E5E5E5] to-white dark:from-[#2A2A2A] dark:to-[#111111] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300" />
-            <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#111111] to-[#4A4A4A] dark:from-[#E5E5E5] dark:to-[#D1D5DB] group-hover:w-full transition-all duration-300" />
-          </Link>
         </nav>
         
         {/* Mobile Menu Button */}
@@ -137,13 +128,6 @@ export function Header() {
                 className="px-4 py-3.5 text-[15px] text-left font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
               >
                 Top Cryptos
-              </Link>
-              <Link 
-                href="#crypto-price-charts"
-                onClick={(e) => scrollToSection('crypto-price-charts', e)}
-                className="px-4 py-3.5 text-[15px] text-left font-medium text-[#4A4A4A] dark:text-[#D1D5DB] hover:bg-[#F8F9FA] dark:hover:bg-[#2A2A2A] active:bg-[#F8F9FA]/80 dark:active:bg-[#2A2A2A]/80"
-              >
-                Crypto Price Charts
               </Link>
             </div>
           </div>

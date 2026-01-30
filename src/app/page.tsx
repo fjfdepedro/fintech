@@ -476,65 +476,7 @@ export default async function Home() {
               </CardContent>
             </Card>
           </div>
-          
-          <div className="mt-6" id="crypto-price-charts">
-            <Card>
-              <CardHeader className="flex flex-col gap-3 p-6 sm:p-8 bg-gradient-to-r from-[#F8F9FA]/10 via-[#E5E5E5]/10 to-[#D1D5DB]/10 border-b border-[#D1D5DB]/20 dark:border-[#2A2A2A]/20">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-[#111111] via-[#2A2A2A] to-[#4A4A4A] dark:from-white dark:via-[#E5E5E5] dark:to-[#D1D5DB] bg-clip-text text-transparent">
-                    Crypto Price Charts
-                  </h2>
-                  <div className="hidden sm:block">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-8 w-8 text-[#4A4A4A]/50 dark:text-[#D1D5DB]/50"
-                      aria-hidden="true"
-                    >
-                      <path d="M3 3v18h18" />
-                      <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
-                    </svg>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 sm:p-8">
-                <div className="grid gap-6 md:grid-cols-2">
-                  {sortedHistoricalData.map((coin: HistoricalCryptoData) => {
-                    const cryptoInfo = cryptoData.find((c: CryptoData) => c.id === coin.coinId)
-                    const formattedTimestamp = cryptoInfo?.timestamp && isValidPastDate(cryptoInfo.timestamp)
-                      ? formatDate(cryptoInfo.timestamp)
-                      : '--'
-                    return (
-                      <Card key={coin.coinId}>
-                        <CardHeader className="p-4">
-                          <h3 className="text-base font-medium">
-                            {coin.symbol} Price (7d)
-                          </h3>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                          <PriceChart
-                            data={coin.data}
-                            symbol={coin.symbol}
-                            showAxes={false}
-                            height={200}
-                          />
-                          <div className="p-4 text-sm text-muted-foreground border-t">
-                            <div className="font-medium">{cryptoInfo?.name || 'Crypto'} | Price: ${cryptoInfo?.price.toFixed(2) || '--'} | {formattedTimestamp}</div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
+
           <SiteFooter />
         </div>
       </>
