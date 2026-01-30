@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background Generator - Crypto Market</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #111;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    h1 { margin-bottom: 5px; }
+    p { color: #888; }
+
+    .background {
+      width: 1024px;
+      height: 576px;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d1421 100%);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Corner crypto symbols - clustered around edges */
+    .corner {
+      position: absolute;
+      font-family: 'Segoe UI', sans-serif;
+      font-weight: bold;
+      opacity: 0.12;
+    }
+
+    /* Top left */
+    .tl1 { top: 20px; left: 30px; font-size: 70px; color: #f7931a; }
+    .tl2 { top: 100px; left: 60px; font-size: 50px; color: #627eea; }
+    .tl3 { top: 160px; left: 25px; font-size: 40px; color: #00ffa3; }
+
+    /* Top right */
+    .tr1 { top: 25px; right: 40px; font-size: 65px; color: #f3ba2f; }
+    .tr2 { top: 100px; right: 70px; font-size: 45px; color: #26a17b; }
+    .tr3 { top: 165px; right: 35px; font-size: 38px; color: #e84142; }
+
+    /* Bottom left */
+    .bl1 { bottom: 25px; left: 40px; font-size: 60px; color: #8247e5; }
+    .bl2 { bottom: 95px; left: 70px; font-size: 48px; color: #2775ca; }
+    .bl3 { bottom: 160px; left: 30px; font-size: 42px; color: #cf0a2c; }
+
+    /* Bottom right */
+    .br1 { bottom: 30px; right: 50px; font-size: 55px; color: #345d9d; }
+    .br2 { bottom: 100px; right: 75px; font-size: 45px; color: #00d395; }
+    .br3 { bottom: 165px; right: 40px; font-size: 40px; color: #ff007a; }
+
+    /* Chart lines */
+    .chart-line {
+      position: absolute;
+      height: 2px;
+      opacity: 0.15;
+    }
+    .cl1 { bottom: 80px; left: 150px; width: 200px; background: linear-gradient(90deg, transparent, #22c55e, #22c55e, #ef4444, transparent); }
+    .cl2 { top: 100px; right: 120px; width: 180px; background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+
+    /* Glows */
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.25;
+    }
+    .glow1 { top: -120px; left: -80px; width: 350px; height: 350px; background: #22c55e; }
+    .glow2 { top: -100px; right: -100px; width: 300px; height: 300px; background: #3b82f6; }
+    .glow3 { bottom: -120px; left: -80px; width: 320px; height: 320px; background: #f7931a; }
+    .glow4 { bottom: -100px; right: -100px; width: 280px; height: 280px; background: #627eea; }
+
+    .instructions {
+      background: #222;
+      padding: 15px 25px;
+      border-radius: 8px;
+    }
+    code { background: #444; padding: 2px 8px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Background Image Generator</h1>
+  <p>1024 x 576 - Edges decorated, center clear for UI</p>
+
+  <div class="background" id="background">
+    <!-- Glows -->
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
+    <div class="glow glow3"></div>
+    <div class="glow glow4"></div>
+
+    <!-- Top left corner -->
+    <span class="corner tl1">₿</span>
+    <span class="corner tl2">Ξ</span>
+    <span class="corner tl3">◎</span>
+
+    <!-- Top right corner -->
+    <span class="corner tr1">BNB</span>
+    <span class="corner tr2">USDT</span>
+    <span class="corner tr3">AVAX</span>
+
+    <!-- Bottom left corner -->
+    <span class="corner bl1">MATIC</span>
+    <span class="corner bl2">USDC</span>
+    <span class="corner bl3">NEAR</span>
+
+    <!-- Bottom right corner -->
+    <span class="corner br1">LTC</span>
+    <span class="corner br2">UNI</span>
+    <span class="corner br3">LINK</span>
+
+    <!-- Chart lines -->
+    <div class="chart-line cl1"></div>
+    <div class="chart-line cl2"></div>
+  </div>
+
+  <div class="instructions">
+    <p><strong>F12</strong> → Elements → clic derecho en <code>&lt;div class="background"&gt;</code> → <strong>"Capture node screenshot"</strong></p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cover Art Generator - Crypto Market</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #111;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    h1 { margin-bottom: 5px; }
+    p { color: #888; }
+
+    .cover {
+      width: 1024px;
+      height: 576px;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d1421 100%);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Background chart pattern */
+    .bg-chart {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 150px;
+      opacity: 0.1;
+      background: linear-gradient(180deg, transparent 0%, #22c55e 50%, #ef4444 70%, #22c55e 100%);
+      clip-path: polygon(0 80%, 10% 60%, 20% 70%, 30% 40%, 40% 55%, 50% 30%, 60% 45%, 70% 20%, 80% 35%, 90% 15%, 100% 25%, 100% 100%, 0% 100%);
+    }
+
+    /* Background crypto symbols */
+    .bg-symbols {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0.06;
+    }
+    .sym {
+      position: absolute;
+      font-weight: bold;
+    }
+    .s1 { top: 40px; left: 60px; font-size: 50px; color: #f7931a; }
+    .s2 { top: 50px; right: 80px; font-size: 45px; color: #627eea; }
+    .s3 { bottom: 120px; left: 100px; font-size: 40px; color: #f3ba2f; }
+    .s4 { bottom: 100px; right: 120px; font-size: 48px; color: #00ffa3; }
+    .s5 { top: 150px; left: 150px; font-size: 35px; color: #26a17b; }
+    .s6 { top: 140px; right: 160px; font-size: 38px; color: #e84142; }
+
+    /* Glows */
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+    }
+    .glow1 { top: -150px; left: -100px; width: 450px; height: 450px; background: #22c55e; }
+    .glow2 { bottom: -150px; right: -100px; width: 400px; height: 400px; background: #3b82f6; }
+
+    /* Content */
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .bar {
+      width: 24px;
+      border-radius: 6px;
+    }
+    .bar1 { height: 60px; background: linear-gradient(180deg, #22c55e, #16a34a); }
+    .bar2 { height: 90px; background: linear-gradient(180deg, #3b82f6, #2563eb); }
+    .bar3 { height: 70px; background: linear-gradient(180deg, #22c55e, #16a34a); }
+    .bar4 { height: 110px; background: linear-gradient(180deg, #f59e0b, #d97706); }
+
+    .title {
+      font-size: 72px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #22c55e 0%, #3b82f6 50%, #22c55e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .author {
+      font-size: 24px;
+      color: #9ca3af;
+      margin-bottom: 25px;
+    }
+    .author span {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .badges {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .badge {
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: 700;
+      font-size: 18px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid;
+    }
+    .badge.btc { color: #f7931a; border-color: #f7931a; }
+    .badge.eth { color: #627eea; border-color: #627eea; }
+    .badge.sol { color: #00ffa3; border-color: #00ffa3; }
+    .badge.bnb { color: #f3ba2f; border-color: #f3ba2f; }
+
+    .instructions {
+      background: #222;
+      padding: 15px 25px;
+      border-radius: 8px;
+    }
+    code { background: #444; padding: 2px 8px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Cover Art Generator</h1>
+  <p>1024 x 576 - With title and art</p>
+
+  <div class="cover" id="cover">
+    <!-- Glows -->
+    <div class="glow glow1"></div>
+    <div class="glow glow2"></div>
+
+    <!-- Background chart -->
+    <div class="bg-chart"></div>
+
+    <!-- Background symbols -->
+    <div class="bg-symbols">
+      <span class="sym s1">₿</span>
+      <span class="sym s2">Ξ</span>
+      <span class="sym s3">BNB</span>
+      <span class="sym s4">SOL</span>
+      <span class="sym s5">USDT</span>
+      <span class="sym s6">XRP</span>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="logo">
+        <div class="bar bar1"></div>
+        <div class="bar bar2"></div>
+        <div class="bar bar3"></div>
+        <div class="bar bar4"></div>
+      </div>
+      <div class="title">Crypto Market</div>
+      <div class="author">by <span>PacoTeam</span></div>
+      <div class="badges">
+        <span class="badge btc">BTC</span>
+        <span class="badge eth">ETH</span>
+        <span class="badge sol">SOL</span>
+        <span class="badge bnb">BNB</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <p><strong>F12</strong> → Elements → clic derecho en <code>&lt;div class="cover"&gt;</code> → <strong>"Capture node screenshot"</strong></p>
+  </div>
+</body>
+</html>
