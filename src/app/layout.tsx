@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import GoogleAnalytics from '@/components/google-analytics'
 import { AutoUpdater } from '@/components/auto-updater'
-import { CookieConsent } from '@/components/ui/cookie-consent'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from "@/lib/utils";
 import { fontSans } from "@/styles/fonts";
@@ -100,16 +98,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="light" 
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
           enableSystem
         >
-          <GoogleAnalytics />
           <AutoUpdater />
           {children}
           <ThemeToggle />
-          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>
